@@ -1,0 +1,25 @@
+# This file is used to generate the QGIS plugin metadata.
+# It should be placed in the root of the plugin directory.
+
+[general]
+name=Layer Diff
+description=Visual diff for vector layers — compare two versions and see added, removed, and modified features
+version=0.1.0
+author=Tabib Hasan
+email=tabibhasann@users.noreply.github.com
+about=Compare two vector layers and visualize differences. By key field or geometry matching, find added, removed, and modified features. Styled result layers, interactive change table, and exportable reports.
+
+qgisMinimumVersion=3.28
+qgisMaximumVersion=3.99
+experimental=True
+
+tags=diff,compare,version,change,qa,review
+homepage=https://github.com/tabibhasann/qgis-layer-diff
+repository=https://github.com/tabibhasann/qgis-layer-diff
+tracker=https://github.com/tabibhasann/qgis-layer-diff/issues
+icon=resources/icons/icon.svg
+
+hasProcessingProvider=no
+
+[general]
+# End of metadata
