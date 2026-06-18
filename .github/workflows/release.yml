@@ -3,22 +3,64 @@ name: Release Plugin
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 jobs:
-  release:
+  build:
+    name: Build plugin
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install qgis-plugin-ci
+
+      - name: Install qgis-plugin-ci
+        run: pip install qgis-plugin-ci
+
+      - name: Lint plugin
+        run: qgis-plugin-ci lint --allow-unknown-field
+
       - name: Package plugin
         run: |
           mkdir -p dist
-          zip -r dist/qgis_layer_diff.zip . -x ".git/*" "test/*" ".github/*" ".commandcode/*"
-      - name: Create Release
+          qgis-plugin-ci package --plugin-name layer_diff
+          ls -la dist/
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/qgis_layer_diff.zip
+          files: dist/*.zip
           generate_release_notes: true
+
+  publish:
+    name: Publish to QGIS Plugin Repository
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: qgis-plugin-repo
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install qgis-plugin-ci
+        run: pip install qgis-plugin-ci
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-zip
+          path: dist/
+
+      - name: Publish to QGIS Plugin Repository
+        env:
+          OSGEO_USERNAME: ${{ secrets.OSGEO_USERNAME }}
+          OSGEO_PASSWORD: ${{ secrets.OSGEO_PASSWORD }}
+        run: |
+          qgis-plugin-ci release \
+            --plugin-repo-url https://plugins.qgis.org \
+            --plugin-name layer_diff

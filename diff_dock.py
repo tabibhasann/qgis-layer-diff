@@ -11,8 +11,7 @@ from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.core import (
     QgsVectorLayer, QgsProject, QgsMapLayerProxyModel,
     QgsCoordinateTransform, QgsFeature, QgsGeometry, QgsField,
-    QgsSingleSymbolRenderer, QgsFillSymbol, QgsCategorizedSymbolRenderer,
-    QgsRendererCategory,
+    QgsSingleSymbolRenderer, QgsFillSymbol, QgsMarkerSymbol, QgsLineSymbol,
 )
 from qgis.PyQt.QtGui import QColor
 
@@ -91,6 +90,16 @@ class DiffDock(QDockWidget):
         self.table.cellClicked.connect(self._on_cell_clicked)
         layout.addWidget(self.table)
 
+        # Per-field change detail view (one row per changed field, old → new)
+        self.detail_label = QLabel("<i>Click a modified row to see field-by-field changes</i>")
+        self.detail_label.setWordWrap(True)
+        layout.addWidget(self.detail_label)
+
+        self.detail_table = QTableWidget(0, 3)
+        self.detail_table.setHorizontalHeaderLabels(["Field", "Old", "New"])
+        self.detail_table.horizontalHeader().setStretchLastSection(True)
+        layout.addWidget(self.detail_table)
+
         # Export buttons
         export_layout = QHBoxLayout()
         self.export_html_btn = QPushButton("Export HTML")
@@ -115,6 +124,21 @@ class DiffDock(QDockWidget):
         if not layer_a or not layer_b:
             QMessageBox.warning(self, "Error", "Select both Layer A and Layer B.")
             return
+
+        # CRS warning
+        if not layer_a.crs().isValid() or not layer_b.crs().isValid():
+            QMessageBox.warning(
+                self,
+                "CRS Warning",
+                "One or both layers have an invalid CRS. Results may be incorrect.",
+            )
+        elif layer_a.crs() != layer_b.crs():
+            QMessageBox.information(
+                self,
+                "CRS Reprojection",
+                f"Layer B will be reprojected from {layer_b.crs().authid()} "
+                f"to {layer_a.crs().authid()} for comparison.",
+            )
 
         self._clear_results()
 
@@ -237,29 +261,74 @@ class DiffDock(QDockWidget):
         dp.addFeatures(features)
         layer.updateExtents()
 
-        symbol = QgsFillSymbol.createSimple({
-            "color": color.name(),
-            "outline_color": color.darker(120).name(),
-            "outline_width": "0.5",
-        }) if geom_type > 0 else None
-
-        if symbol:
+        symbol = self._make_symbol(geom_type, color)
+        if symbol is not None:
             layer.setRenderer(QgsSingleSymbolRenderer(symbol))
 
         QgsProject.instance().addMapLayer(layer)
         self.result_layers.append(layer)
 
+    @staticmethod
+    def _make_symbol(geom_type: int, color: QColor):
+        """Build the right QGIS symbol class for the layer's geometry type.
+
+        geom_type: 0=Point, 1=Line, 2=Polygon (QgsWkbTypes enum values).
+        """
+        if geom_type == 0:  # Point
+            return QgsMarkerSymbol.createSimple({
+                "color": color.name(),
+                "outline_color": color.darker(150).name(),
+                "size": "3.0",
+            })
+        if geom_type == 1:  # Line
+            return QgsLineSymbol.createSimple({
+                "color": color.name(),
+                "width": "1.5",
+            })
+        # Polygon (or unknown — fall back to a fill)
+        return QgsFillSymbol.createSimple({
+            "color": color.name(),
+            "outline_color": color.darker(120).name(),
+            "outline_width": "0.5",
+        })
+
     def _on_cell_clicked(self, row, col):
         if not self.result or row >= len(self.result.modified):
             return
         mod = self.result.modified[row]
+
+        # Populate the field-by-field detail table
+        self.detail_table.setRowCount(len(mod.field_changes))
+        for i, fc in enumerate(mod.field_changes):
+            old_item = QTableWidgetItem("" if fc.old is None else str(fc.old))
+            new_item = QTableWidgetItem("" if fc.new is None else str(fc.new))
+            old_item.setBackground(QColor(244, 67, 54, 50))  # red tint
+            new_item.setBackground(QColor(76, 175, 80, 50))  # green tint
+            self.detail_table.setItem(i, 0, QTableWidgetItem(fc.field))
+            self.detail_table.setItem(i, 1, old_item)
+            self.detail_table.setItem(i, 2, new_item)
+
+        if mod.geometry_changed:
+            geom_row = self.detail_table.rowCount()
+            self.detail_table.insertRow(geom_row)
+            geom_item = QTableWidgetItem("(geometry)")
+            geom_item.setBackground(QColor(255, 152, 0, 50))  # amber tint
+            self.detail_table.setItem(geom_row, 0, geom_item)
+            self.detail_table.setItem(geom_row, 1, QTableWidgetItem("Changed"))
+            self.detail_table.setItem(geom_row, 2, QTableWidgetItem("Changed"))
+
+        self.detail_label.setText(
+            f"<b>Modified feature:</b> {mod.key}  "
+            f"(<i>{len(mod.field_changes)} field change(s)"
+            f"{', geometry changed' if mod.geometry_changed else ''}</i>)"
+        )
+
+        # Flash + zoom on canvas
         if mod.new_wkt:
             geom = QgsGeometry.fromWkt(mod.new_wkt)
-            if geom:
+            if geom and not geom.isEmpty():
                 self.iface.mapCanvas().flashGeometries([geom])
-                self.iface.mapCanvas().zoomToFeatureExtent(
-                    QgsGeometry.fromWkt(mod.new_wkt).boundingBox()
-                )
+                self.iface.mapCanvas().zoomToFeatureExtent(geom.boundingBox())
 
     def _export_html(self):
         if not self.result:

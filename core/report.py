@@ -1,16 +1,31 @@
 """Report generation — pure logic, no QGIS imports."""
 
+import csv
+import html
+from io import StringIO
+
 from .models import DiffResult
 
 
+def _esc(value: object) -> str:
+    """HTML-escape arbitrary values for safe rendering."""
+    if value is None:
+        return ""
+    return html.escape(str(value), quote=True)
+
+
 def to_html(result: DiffResult, title: str = "Layer Diff Report") -> str:
-    """Generate an HTML report from a DiffResult."""
+    """Generate an HTML report from a DiffResult.
+
+    All user-supplied values are HTML-escaped to prevent XSS in field values.
+    """
     s = result.summary
+    safe_title = _esc(title)
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{title}</title>
+    <title>{safe_title}</title>
     <style>
         body {{ font-family: -apple-system, sans-serif; max-width: 800px; margin: 2rem auto; }}
         .summary {{ display: flex; gap: 1rem; margin: 1rem 0; }}
@@ -24,7 +39,7 @@ def to_html(result: DiffResult, title: str = "Layer Diff Report") -> str:
     </style>
 </head>
 <body>
-    <h1>{title}</h1>
+    <h1>{safe_title}</h1>
     <div class="summary">
         <div class="added">+{s['added']} Added</div>
         <div class="removed">-{s['removed']} Removed</div>
@@ -44,28 +59,40 @@ def _modified_rows(result: DiffResult) -> str:
     rows = []
     for m in result.modified:
         if m.geometry_changed:
-            rows.append(f"<tr><td>{m.key}</td><td><em>geometry</em></td><td colspan='2'>Changed</td></tr>")
+            rows.append(
+                f"<tr><td>{_esc(m.key)}</td><td><em>geometry</em></td><td colspan='2'>Changed</td></tr>"
+            )
         for fc in m.field_changes:
-            rows.append(f"<tr><td>{m.key}</td><td>{fc.field}</td><td>{fc.old}</td><td>{fc.new}</td></tr>")
+            rows.append(
+                f"<tr><td>{_esc(m.key)}</td><td>{_esc(fc.field)}</td>"
+                f"<td>{_esc(fc.old)}</td><td>{_esc(fc.new)}</td></tr>"
+            )
     return "\n".join(rows)
 
 
 def to_csv(result: DiffResult) -> str:
-    """Generate a CSV report from a DiffResult."""
-    lines = ["type,key,field,old_value,new_value"]
+    """Generate a CSV report from a DiffResult using proper CSV formatting."""
+    output = StringIO()
+    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+    
+    # Header
+    writer.writerow(["type", "key", "field", "old_value", "new_value"])
 
+    # Added features
     for rec in result.added:
-        lines.append(f"added,{rec.key},,,,")
+        writer.writerow(["added", rec.key, "", "", ""])
 
+    # Removed features
     for rec in result.removed:
-        lines.append(f"removed,{rec.key},,,,")
+        writer.writerow(["removed", rec.key, "", "", ""])
 
+    # Modified features
     for m in result.modified:
         if m.geometry_changed:
-            lines.append(f"modified,{m.key},geometry,Changed,Changed")
+            writer.writerow(["modified", m.key, "geometry", "Changed", "Changed"])
         for fc in m.field_changes:
-            old = str(fc.old).replace(",", "\\,") if fc.old is not None else ""
-            new = str(fc.new).replace(",", "\\,") if fc.new is not None else ""
-            lines.append(f"modified,{m.key},{fc.field},{old},{new}")
+            old = str(fc.old) if fc.old is not None else ""
+            new = str(fc.new) if fc.new is not None else ""
+            writer.writerow(["modified", m.key, fc.field, old, new])
 
-    return "\n".join(lines)
+    return output.getvalue()

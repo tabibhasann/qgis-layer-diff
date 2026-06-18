@@ -2,9 +2,9 @@
 
 import os
 
-from qgis.PyQt.QtWidgets import QAction, QMessageBox
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QIcon
-from qgis.core import QgsApplication
+from qgis.PyQt.QtWidgets import QAction
 
 
 class LayerDiffPlugin:
@@ -12,7 +12,7 @@ class LayerDiffPlugin:
 
     def __init__(self, iface):
         self.iface = iface
-        self.action = None
+        self.action: QAction | None = None
         self.dock = None
 
     def initGui(self):
@@ -27,8 +27,9 @@ class LayerDiffPlugin:
         self.iface.addPluginToVectorMenu("Layer Diff", self.action)
 
     def unload(self):
-        self.iface.removePluginVectorMenu("Layer Diff", self.action)
-        self.iface.removeToolBarIcon(self.action)
+        if self.action:
+            self.iface.removePluginVectorMenu("Layer Diff", self.action)
+            self.iface.removeToolBarIcon(self.action)
         if self.dock:
             self.iface.removeDockWidget(self.dock)
             self.dock = None
@@ -37,6 +38,6 @@ class LayerDiffPlugin:
         if not self.dock:
             from .diff_dock import DiffDock
             self.dock = DiffDock(self.iface)
-            self.iface.addDockWidget(2, self.dock)  # Qt.RightDockWidgetArea
+            self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.dock.show()
         self.dock.raise_()

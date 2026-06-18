@@ -1,6 +1,6 @@
 """Core diff computation — pure logic, no QGIS imports."""
 
-from typing import Any
+from typing import Callable
 
 from .matching import match_by_key, match_by_geometry
 from .models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
@@ -14,6 +14,7 @@ def compute_diff(
     geom_tolerance: float = 0.0,
     compare_geometry: bool = True,
     compare_attributes: bool = True,
+    progress_callback: Callable | None = None,
 ) -> DiffResult:
     """Compute the diff between two sets of feature records.
 
@@ -24,14 +25,18 @@ def compute_diff(
         geom_tolerance: Tolerance for geometry-based matching.
         compare_geometry: Whether to check for geometry changes.
         compare_attributes: Whether to check for attribute changes.
+        progress_callback: Optional callback(current, total, message) for progress updates.
 
     Returns:
         DiffResult with added, removed, modified, and unchanged counts.
     """
+    if progress_callback:
+        progress_callback(0, len(records_a), "Starting diff computation")
+    
     if key:
         match_result = match_by_key(records_a, records_b)
     else:
-        match_result = match_by_geometry(records_a, records_b, geom_tolerance)
+        match_result = match_by_geometry(records_a, records_b, geom_tolerance, progress_callback)
 
     result = DiffResult()
 
@@ -42,7 +47,11 @@ def compute_diff(
     result.removed = match_result["only_a"]
 
     # Check matched pairs for modifications
-    for rec_a, rec_b in match_result["matched"]:
+    matched = match_result["matched"]
+    for i, (rec_a, rec_b) in enumerate(matched):
+        if progress_callback and i % 10 == 0:
+            progress_callback(i, len(matched), "Comparing features")
+        
         field_changes: list[FieldChange] = []
         geom_changed = False
 
@@ -69,5 +78,8 @@ def compute_diff(
             )
         else:
             result.unchanged_count += 1
+
+    if progress_callback:
+        progress_callback(len(matched), len(matched), "Diff complete")
 
     return result

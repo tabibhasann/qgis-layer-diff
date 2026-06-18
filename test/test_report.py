@@ -1,6 +1,5 @@
 """Tests for report formatting."""
 
-import pytest
 from core.models import DiffResult, FeatureRecord, ModifiedFeature, FieldChange
 from core.report import to_html, to_csv
 

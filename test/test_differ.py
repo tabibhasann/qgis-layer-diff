@@ -1,7 +1,6 @@
 """Tests for the core differ — pure Python, no QGIS needed."""
 
-import pytest
-from core.models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
+from core.models import DiffResult, FeatureRecord
 from core.differ import compute_diff
 from core.matching import match_by_key, match_by_geometry
 
