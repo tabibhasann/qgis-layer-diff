@@ -5,6 +5,9 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build plugin
@@ -16,19 +19,34 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install qgis-plugin-ci
-        run: pip install qgis-plugin-ci
+      - name: Install release dependencies
+        run: pip install qgis-plugin-ci ruff
 
-      - name: Lint plugin
-        run: qgis-plugin-ci lint --allow-unknown-field
+      - name: Run static lint
+        run: ruff check .
+
+      - name: Determine release version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF:-}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="$(awk -F= '/^version=/{print $2; exit}' metadata.txt)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Package plugin
-        run: |
-          mkdir -p dist
-          qgis-plugin-ci package --plugin-name layer_diff
-          ls -la dist/
+        run: bash scripts/package_plugin.sh "${{ steps.version.outputs.version }}"
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-zip
+          path: dist/*.zip
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
           files: dist/*.zip
@@ -50,17 +68,23 @@ jobs:
       - name: Install qgis-plugin-ci
         run: pip install qgis-plugin-ci
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: plugin-zip
-          path: dist/
+      - name: Determine release version
+        id: version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Stage plugin for qgis-plugin-ci
+        run: bash scripts/prepare_qgis_plugin_ci.sh
 
       - name: Publish to QGIS Plugin Repository
         env:
           OSGEO_USERNAME: ${{ secrets.OSGEO_USERNAME }}
           OSGEO_PASSWORD: ${{ secrets.OSGEO_PASSWORD }}
         run: |
-          qgis-plugin-ci release \
-            --plugin-repo-url https://plugins.qgis.org \
-            --plugin-name layer_diff
+          cd build/qgis-plugin-ci
+          qgis-plugin-ci release "${{ steps.version.outputs.version }}" \
+            --release-tag "v${{ steps.version.outputs.version }}" \
+            --osgeo-username "$OSGEO_USERNAME" \
+            --osgeo-password "$OSGEO_PASSWORD"

@@ -1,5 +1,7 @@
 """Matching strategies: by key field or by geometry."""
 
+from __future__ import annotations
+
 from typing import Any, Callable
 
 from .models import FeatureRecord

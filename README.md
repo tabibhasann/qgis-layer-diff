@@ -4,7 +4,7 @@
 
 Compare two versions of a vector layer and instantly see what changed: added features (green), removed features (red), and modified features (orange). Detect geometry changes, attribute changes, or both. Export detailed reports in HTML or CSV format.
 
-[![QGIS](https://img.shields.io/badge/QGIS-3.22+-green?logo=qgis)](https://qgis.org)
+[![QGIS](https://img.shields.io/badge/QGIS-3.28+-green?logo=qgis)](https://qgis.org)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-GPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/tabibhasann/qgis-layer-diff/workflows/CI/badge.svg)](../../actions)
@@ -56,17 +56,17 @@ Compare two versions of a vector layer and instantly see what changed: added fea
 
 ```bash
 # Clone the repository
-git clone https://github.com/tabibhasann/qgis-layer-diff.git
+git clone https://github.com/tabibhasann/qgis-layer-diff.git qgis_layer_diff
 
 # Copy to QGIS plugins directory
 # Linux:
-cp -r qgis-layer-diff ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
+cp -r qgis_layer_diff ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
 
 # macOS:
-cp -r qgis-layer-diff ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/
+cp -r qgis_layer_diff ~/Library/Application\ Support/QGIS/QGIS3/profiles/default/python/plugins/
 
 # Windows:
-# Copy to: %APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\
+# Copy qgis_layer_diff to: %APPDATA%\QGIS\QGIS3\profiles\default\python\plugins\
 ```
 
 3. Restart QGIS
@@ -194,13 +194,13 @@ from qgis_layer_diff.core.models import FeatureRecord
 
 # Create feature records
 layer_a_records = [
-    FeatureRecord(key="1", attributes={"name": "Building A"}, wkt="POLYGON((...))"),
-    FeatureRecord(key="2", attributes={"name": "Building B"}, wkt="POLYGON((...))"),
+    FeatureRecord(key="1", attrs={"name": "Building A"}, wkt="POLYGON((...))"),
+    FeatureRecord(key="2", attrs={"name": "Building B"}, wkt="POLYGON((...))"),
 ]
 
 layer_b_records = [
-    FeatureRecord(key="1", attributes={"name": "Building A"}, wkt="POLYGON((...))"),  # unchanged
-    FeatureRecord(key="3", attributes={"name": "Building C"}, wkt="POLYGON((...))"),  # added
+    FeatureRecord(key="1", attrs={"name": "Building A"}, wkt="POLYGON((...))"),  # unchanged
+    FeatureRecord(key="3", attrs={"name": "Building C"}, wkt="POLYGON((...))"),  # added
 ]
 
 # Compute diff
@@ -246,7 +246,7 @@ After computing the diff, you can filter results programmatically:
 
 ```python
 # Get only features with attribute changes
-attr_changes = [f for f in result.modified if f.attribute_changes]
+attr_changes = [f for f in result.modified if f.field_changes]
 
 # Get only features with geometry changes
 geom_changes = [f for f in result.modified if f.geometry_changed]
@@ -254,7 +254,7 @@ geom_changes = [f for f in result.modified if f.geometry_changed]
 # Get features where a specific field changed
 name_changes = [
     f for f in result.modified 
-    if any(change.field == "name" for change in f.attribute_changes)
+    if any(change.field == "name" for change in f.field_changes)
 ]
 ```
 
@@ -269,6 +269,9 @@ pip install pytest pytest-cov ruff shapely
 # Run all tests
 PYTHONPATH=. pytest test/ -v
 
+# Run static lint
+ruff check .
+
 # Run with coverage report
 PYTHONPATH=. pytest test/ --cov=core --cov-report=html
 
@@ -280,6 +283,23 @@ PYTHONPATH=. pytest test/ -vv -s
 ```
 
 **Test coverage:** 80%+ for core modules (differ, matching, report)
+
+## 📦 Packaging
+
+Release archives are built with `qgis-plugin-ci`. Because this repository is itself
+the plugin root, the packaging script stages the files into the install directory
+layout expected by QGIS before invoking `qgis-plugin-ci`.
+
+```bash
+# Install packaging dependency
+python3 -m pip install qgis-plugin-ci
+
+# Build dist/qgis_layer_diff.<version>.zip from metadata.txt
+bash scripts/package_plugin.sh
+
+# If pip installed the qgis-plugin-ci script outside PATH:
+QGIS_PLUGIN_CI_BIN="$(python3 -m site --user-base)/bin/qgis-plugin-ci" bash scripts/package_plugin.sh
+```
 
 ## 🏗️ Architecture
 
@@ -300,6 +320,7 @@ qgis-layer-diff/
 │   ├── test_matching.py    # Matching algorithm tests
 │   ├── test_report.py      # Export tests
 │   └── test_dock_logic.py  # Edge cases + escaping + progress callbacks
+├── scripts/                 # qgis-plugin-ci staging and packaging helpers
 ├── resources/               # Icons and UI resources
 │   └── icons/
 └── help/                    # Documentation
@@ -333,7 +354,8 @@ Contributions are welcome! Here's how to get started:
 5. **Make your changes** and add tests
 6. **Run tests:**
    ```bash
-   pytest tests/ -v
+   PYTHONPATH=. pytest test/ -v
+   ruff check .
    ```
 7. **Commit and push:**
    ```bash

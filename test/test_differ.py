@@ -1,5 +1,7 @@
 """Tests for the core differ — pure Python, no QGIS needed."""
 
+from __future__ import annotations
+
 from core.models import DiffResult, FeatureRecord
 from core.differ import compute_diff
 from core.matching import match_by_key, match_by_geometry

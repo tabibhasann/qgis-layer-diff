@@ -3,6 +3,18 @@
 All notable changes to qgis-layer-diff are documented here.
 This project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Layer pickers now use `QgsMapLayerComboBox`, matching the QGIS API used by
+  `setFilters()` and `currentLayer()`.
+- Release workflow now uses supported `qgis-plugin-ci` 2.x commands for packaging
+  and QGIS Plugin Repository publishing.
+
+### Added
+- Packaging scripts stage the root-level plugin into the `qgis_layer_diff/`
+  install directory before running `qgis-plugin-ci`.
+
 ## [0.2.0] - 2026-06-16
 
 ### Fixed

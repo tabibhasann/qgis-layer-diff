@@ -1,5 +1,7 @@
 """Core diff computation — pure logic, no QGIS imports."""
 
+from __future__ import annotations
+
 from typing import Callable
 
 from .matching import match_by_key, match_by_geometry

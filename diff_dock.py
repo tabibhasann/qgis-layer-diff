@@ -1,18 +1,19 @@
 """Diff dock widget — QGIS UI for layer comparison."""
 
-import os
+from __future__ import annotations
 
 from qgis.PyQt.QtWidgets import (
     QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QComboBox, QLabel, QTableWidget, QTableWidgetItem, QFileDialog,
-    QCheckBox, QGroupBox, QSplitter, QTextEdit, QHeaderView, QMessageBox,
+    QCheckBox, QGroupBox, QMessageBox,
 )
 from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.core import (
     QgsVectorLayer, QgsProject, QgsMapLayerProxyModel,
-    QgsCoordinateTransform, QgsFeature, QgsGeometry, QgsField,
+    QgsCoordinateTransform, QgsFeature, QgsGeometry,
     QgsSingleSymbolRenderer, QgsFillSymbol, QgsMarkerSymbol, QgsLineSymbol,
 )
+from qgis.gui import QgsMapLayerComboBox
 from qgis.PyQt.QtGui import QColor
 
 from .core.models import FeatureRecord
@@ -40,12 +41,12 @@ class DiffDock(QDockWidget):
 
         # Layer pickers
         layout.addWidget(QLabel("<b>Layer A</b> (before)"))
-        self.layer_a_combo = QComboBox()
+        self.layer_a_combo = QgsMapLayerComboBox()
         self.layer_a_combo.setFilters(QgsMapLayerProxyModel.VectorLayer)
         layout.addWidget(self.layer_a_combo)
 
         layout.addWidget(QLabel("<b>Layer B</b> (after)"))
-        self.layer_b_combo = QComboBox()
+        self.layer_b_combo = QgsMapLayerComboBox()
         self.layer_b_combo.setFilters(QgsMapLayerProxyModel.VectorLayer)
         layout.addWidget(self.layer_b_combo)
 
@@ -147,8 +148,9 @@ class DiffDock(QDockWidget):
         compare_attrs = self.compare_attrs_check.isChecked()
 
         try:
-            records_a = self._layer_to_records(layer_a, layer_b, key_field)
-            records_b = self._layer_to_records(layer_b, layer_a, key_field, is_second=True)
+            target_layer = layer_a
+            records_a = self._layer_to_records(layer_a, target_layer, key_field)
+            records_b = self._layer_to_records(layer_b, target_layer, key_field, is_second=True)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to read layers: {e}")
             return
@@ -225,7 +227,7 @@ class DiffDock(QDockWidget):
 
         # Create styled result layers
         if s['added']:
-            self._create_result_layer("added", self.result.added, QColor(76, 175, 80), layer_b)
+            self._create_result_layer("added", self.result.added, QColor(76, 175, 80), layer_a)
         if s['removed']:
             self._create_result_layer("removed", self.result.removed, QColor(244, 67, 54), layer_a)
         if s['modified']:
@@ -233,7 +235,7 @@ class DiffDock(QDockWidget):
                 FeatureRecord(key=m.key, attrs={"key": m.key}, wkt=m.new_wkt)
                 for m in self.result.modified
             ]
-            self._create_result_layer("modified", mod_records, QColor(255, 152, 0), layer_b)
+            self._create_result_layer("modified", mod_records, QColor(255, 152, 0), layer_a)
 
     def _create_result_layer(self, name, records, color, source_layer):
         geom_type = source_layer.geometryType()

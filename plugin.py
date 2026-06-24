@@ -1,5 +1,7 @@
 """Main QGIS plugin class — hooks into QGIS and opens the diff dock."""
 
+from __future__ import annotations
+
 import os
 
 from qgis.PyQt.QtCore import Qt
