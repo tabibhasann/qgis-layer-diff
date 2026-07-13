@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from core.models import DiffResult, FeatureRecord
+from core.models import DiffResult, FeatureRecord, ModifiedFeature, FieldChange
 from core.differ import compute_diff
 from core.matching import match_by_key, match_by_geometry
 
@@ -103,6 +103,51 @@ class TestComputeDiff:
         assert s["unchanged"] == 3  # keys 2, 3, 4 unchanged
 
 
+class TestIgnoreFields:
+    def test_ignore_fields_excludes_from_comparison(self):
+        a = [FeatureRecord(key="1", attrs={"name": "A", "updated_at": "2024-01-01"}, wkt="POINT(0 0)")]
+        b = [FeatureRecord(key="1", attrs={"name": "A", "updated_at": "2024-06-01"}, wkt="POINT(0 0)")]
+        result = compute_diff(a, b, key="key", ignore_fields={"updated_at"})
+        assert result.unchanged_count == 1
+        assert len(result.modified) == 0
+
+    def test_ignore_fields_still_detects_other_changes(self):
+        a = [FeatureRecord(key="1", attrs={"name": "Old", "updated_at": "2024-01-01"}, wkt="POINT(0 0)")]
+        b = [FeatureRecord(key="1", attrs={"name": "New", "updated_at": "2024-06-01"}, wkt="POINT(0 0)")]
+        result = compute_diff(a, b, key="key", ignore_fields={"updated_at"})
+        assert len(result.modified) == 1
+        assert result.modified[0].field_changes[0].field == "name"
+
+
+class TestDuplicateKeys:
+    def test_duplicate_keys_reported(self):
+        a = [
+            FeatureRecord(key="1", attrs={"name": "A"}, wkt="POINT(0 0)"),
+            FeatureRecord(key="1", attrs={"name": "A2"}, wkt="POINT(1 1)"),
+        ]
+        b = [FeatureRecord(key="1", attrs={"name": "A"}, wkt="POINT(0 0)")]
+        result = compute_diff(a, b, key="key")
+        assert result.unchanged_count == 1
+        assert len(result.modified) == 0
+        assert len(result.removed) == 1
+
+    def test_duplicate_keys_warning_surfaced(self):
+        a = [
+            FeatureRecord(key="1", attrs={"name": "A"}, wkt="POINT(0 0)"),
+            FeatureRecord(key="1", attrs={"name": "A2"}, wkt="POINT(1 1)"),
+        ]
+        b = [FeatureRecord(key="1", attrs={"name": "A"}, wkt="POINT(0 0)")]
+        result = compute_diff(a, b, key="key")
+        assert len(result.warnings) > 0
+        assert "Duplicate key" in result.warnings[0]
+
+    def test_no_warnings_without_duplicates(self):
+        a = [FeatureRecord(key="1", attrs={}, wkt="POINT(0 0)")]
+        b = [FeatureRecord(key="1", attrs={}, wkt="POINT(0 0)")]
+        result = compute_diff(a, b, key="key")
+        assert len(result.warnings) == 0
+
+
 class TestReport:
     def test_html_contains_summary(self):
         from core.report import to_html
@@ -110,6 +155,52 @@ class TestReport:
         html = to_html(result)
         assert "Layer Diff Report" in html
         assert "Added" in html
+
+    def test_html_summary_only(self):
+        from core.report import to_html
+        result = DiffResult(
+            modified=[ModifiedFeature(
+                key="1",
+                geometry_changed=True,
+                field_changes=[FieldChange("name", "Old", "New")],
+            )],
+        )
+        html = to_html(result, summary_only=True)
+        assert "Modified Features" not in html
+        assert "~1 Modified" in html
+
+    def test_html_with_details(self):
+        from core.report import to_html
+        result = DiffResult(
+            modified=[ModifiedFeature(
+                key="1",
+                geometry_changed=True,
+                field_changes=[FieldChange("name", "Old", "New")],
+            )],
+        )
+        html = to_html(result, summary_only=False)
+        assert "Modified Features" in html
+        assert "Old" in html
+        assert "New" in html
+
+    def test_html_with_added_removed(self):
+        from core.report import to_html
+        result = DiffResult(
+            added=[FeatureRecord(key="2", attrs={}, wkt="POINT(2 2)")],
+            removed=[FeatureRecord(key="0", attrs={}, wkt="POINT(0 0)")],
+        )
+        html = to_html(result, summary_only=False)
+        assert "Added Features" in html
+        assert "Removed Features" in html
+        assert ">2<" in html
+        assert ">0<" in html
+
+    def test_html_with_warnings(self):
+        from core.report import to_html
+        result = DiffResult(warnings=["Duplicate key(s) found: 1"])
+        html = to_html(result, summary_only=False)
+        assert "Warnings" in html
+        assert "Duplicate key" in html
 
     def test_csv_empty(self):
         from core.report import to_csv

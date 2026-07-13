@@ -14,9 +14,28 @@ def match_by_key(
     """Match features by their key field value.
 
     Returns a dict with matched pairs and unmatched records.
+    If duplicate keys are found, only the first occurrence is used
+    and duplicates are reported in the 'duplicate_keys' list.
     """
-    a_map: dict[str, FeatureRecord] = {r.key: r for r in records_a}
-    b_map: dict[str, FeatureRecord] = {r.key: r for r in records_b}
+    a_map: dict[str, FeatureRecord] = {}
+    a_dupes: list[str] = []
+    a_extras: list[FeatureRecord] = []
+    for r in records_a:
+        if r.key in a_map:
+            a_dupes.append(r.key)
+            a_extras.append(r)
+        else:
+            a_map[r.key] = r
+
+    b_map: dict[str, FeatureRecord] = {}
+    b_dupes: list[str] = []
+    b_extras: list[FeatureRecord] = []
+    for r in records_b:
+        if r.key in b_map:
+            b_dupes.append(r.key)
+            b_extras.append(r)
+        else:
+            b_map[r.key] = r
 
     a_keys = set(a_map.keys())
     b_keys = set(b_map.keys())
@@ -27,8 +46,10 @@ def match_by_key(
 
     return {
         "matched": [(a_map[k], b_map[k]) for k in common_keys],
-        "only_a": [a_map[k] for k in only_a_keys],
-        "only_b": [b_map[k] for k in only_b_keys],
+        "only_a": [a_map[k] for k in only_a_keys] + a_extras,
+        "only_b": [b_map[k] for k in only_b_keys] + b_extras,
+        "duplicate_keys_a": a_dupes,
+        "duplicate_keys_b": b_dupes,
     }
 
 
@@ -58,6 +79,12 @@ def match_by_geometry(
             pass
 
     # Build R-tree spatial index for B
+    if not b_geoms:
+        return {
+            "matched": [],
+            "only_a": list(records_a),
+            "only_b": list(records_b),
+        }
     tree = STRtree(b_geoms)
     
     matched_pairs = []

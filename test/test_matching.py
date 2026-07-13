@@ -16,8 +16,11 @@ class TestMatchByKey:
         a = [FeatureRecord("1", {}, ""), FeatureRecord("1", {}, "")]
         b = [FeatureRecord("1", {}, "")]
         result = match_by_key(a, b)
-        # Dict-based matching: duplicates in A merge to same key, so both match
         assert len(result["matched"]) == 1
+        assert "duplicate_keys_a" in result
+        assert "1" in result["duplicate_keys_a"]
+        assert result["duplicate_keys_b"] == []
+        assert len(result["only_a"]) == 1
 
 
 class TestMatchByGeometry:

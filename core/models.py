@@ -41,6 +41,7 @@ class DiffResult:
     removed: list[FeatureRecord] = field(default_factory=list)
     modified: list[ModifiedFeature] = field(default_factory=list)
     unchanged_count: int = 0
+    warnings: list[str] = field(default_factory=list)
 
     @property
     def summary(self) -> dict[str, int]:

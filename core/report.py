@@ -14,13 +14,48 @@ def _esc(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
-def to_html(result: DiffResult, title: str = "Layer Diff Report") -> str:
+def to_html(result: DiffResult, title: str = "Layer Diff Report", summary_only: bool = False) -> str:
     """Generate an HTML report from a DiffResult.
 
     All user-supplied values are HTML-escaped to prevent XSS in field values.
+    If summary_only is True, only the summary counts are included (no per-feature details).
     """
     s = result.summary
     safe_title = _esc(title)
+    detail_section = ""
+    if not summary_only:
+        added_section = ""
+        if result.added:
+            added_section = f"""
+    <h2>Added Features</h2>
+    <table>
+        <tr><th>Key</th></tr>
+        {chr(10).join(f"<tr><td>{_esc(r.key)}</td></tr>" for r in result.added)}
+    </table>"""
+        removed_section = ""
+        if result.removed:
+            removed_section = f"""
+    <h2>Removed Features</h2>
+    <table>
+        <tr><th>Key</th></tr>
+        {chr(10).join(f"<tr><td>{_esc(r.key)}</td></tr>" for r in result.removed)}
+    </table>"""
+        modified_section = f"""
+    <h2>Modified Features</h2>
+    <table>
+        <tr><th>Key</th><th>Field</th><th>Old</th><th>New</th></tr>
+        {_modified_rows(result)}
+    </table>"""
+        warnings_section = ""
+        if result.warnings:
+            warnings_section = f"""
+    <div class="warnings">
+        <h2>Warnings</h2>
+        <ul>
+            {chr(10).join(f"<li>{_esc(w)}</li>" for w in result.warnings)}
+        </ul>
+    </div>"""
+        detail_section = f"{added_section}{removed_section}{modified_section}{warnings_section}"
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -34,6 +69,8 @@ def to_html(result: DiffResult, title: str = "Layer Diff Report") -> str:
         .removed {{ background: #f44336; }}
         .modified {{ background: #ff9800; }}
         .unchanged {{ background: #9e9e9e; }}
+        .warnings {{ background: #fff3e0; padding: 1rem; border-radius: 8px; margin-top: 1rem; }}
+        .warnings ul {{ margin: 0.5rem 0; padding-left: 1.5rem; }}
         table {{ width: 100%; border-collapse: collapse; margin-top: 1rem; }}
         th, td {{ padding: 0.5rem; border-bottom: 1px solid #ddd; text-align: left; }}
     </style>
@@ -45,12 +82,7 @@ def to_html(result: DiffResult, title: str = "Layer Diff Report") -> str:
         <div class="removed">-{s['removed']} Removed</div>
         <div class="modified">~{s['modified']} Modified</div>
         <div class="unchanged">{s['unchanged']} Unchanged</div>
-    </div>
-    <h2>Modified Features</h2>
-    <table>
-        <tr><th>Key</th><th>Field</th><th>Old</th><th>New</th></tr>
-        {_modified_rows(result)}
-    </table>
+    </div>{detail_section}
 </body>
 </html>"""
 

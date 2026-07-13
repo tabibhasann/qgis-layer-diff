@@ -4,7 +4,7 @@
 [general]
 name=Layer Diff
 description=Visual diff for vector layers — compare two versions and see added, removed, and modified features
-version=0.2.0
+version=0.3.0
 author=Tabib Hasan
 email=tabibhasann@users.noreply.github.com
 about=Compare two vector layers and visualize differences. By key field or geometry matching with R-tree spatial indexing, find added, removed, and modified features. Styled result layers, interactive change table, and exportable reports.
@@ -13,7 +13,7 @@ qgisMinimumVersion=3.28
 qgisMaximumVersion=3.99
 experimental=False
 
-tags=diff,compare,version,change,qa,review,spatial,geometry
+tags=diff,compare,version,change,qa,review,spatial,geometry,vector,quality-assurance,version-control,data-qa,sync,layer-comparison,field-mapping,attribute-diff
 homepage=https://github.com/tabibhasann/qgis-layer-diff
 repository=https://github.com/tabibhasann/qgis-layer-diff
 tracker=https://github.com/tabibhasann/qgis-layer-diff/issues
