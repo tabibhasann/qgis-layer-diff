@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "name": "sample_buildings_after",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::4326" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": 1, "name": "City Hall", "floors": 7, "area_m2": 1200.0 },
+      "geometry": { "type": "Polygon", "coordinates": [[[90.40, 23.81], [90.41, 23.81], [90.41, 23.82], [90.40, 23.82], [90.40, 23.81]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": 2, "name": "Library", "floors": 2, "area_m2": 800.0 },
+      "geometry": { "type": "Polygon", "coordinates": [[[90.41, 23.82], [90.42, 23.82], [90.42, 23.83], [90.41, 23.83], [90.41, 23.82]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": 4, "name": "New Clinic", "floors": 3, "area_m2": 600.0 },
+      "geometry": { "type": "Polygon", "coordinates": [[[90.44, 23.85], [90.45, 23.85], [90.45, 23.86], [90.44, 23.86], [90.44, 23.85]]] }
+    }
+  ]
+}
