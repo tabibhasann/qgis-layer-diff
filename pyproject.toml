@@ -24,12 +24,19 @@ keywords = [
     "field-mapping",
     "attribute-diff",
 ]
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: GIS",
 ]
+
+[project.urls]
+Homepage = "https://github.com/tabibhasann/qgis-layer-diff"
+Repository = "https://github.com/tabibhasann/qgis-layer-diff"
+Issues = "https://github.com/tabibhasann/qgis-layer-diff/issues"
+Changelog = "https://github.com/tabibhasann/qgis-layer-diff/blob/main/CHANGELOG.md"
 
 [tool.ruff]
 target-version = "py311"

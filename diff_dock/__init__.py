@@ -3,15 +3,9 @@
 from __future__ import annotations
 
 from qgis.core import (
-    QgsCoordinateTransform,
-    QgsFeature,
-    QgsFillSymbol,
     QgsGeometry,
-    QgsLineSymbol,
     QgsMapLayerProxyModel,
-    QgsMarkerSymbol,
     QgsProject,
-    QgsSingleSymbolRenderer,
     QgsVectorLayer,
 )
 from qgis.gui import QgsMapLayerComboBox
@@ -35,9 +29,12 @@ from qgis.PyQt.QtWidgets import (
     QWidget,
 )
 
-from .core.differ import compute_diff
-from .core.models import FeatureRecord
-from .core.report import to_csv, to_html
+from ..core.differ import compute_diff
+from ..core.models import FeatureRecord
+from ..core.report import to_csv, to_html
+from .layer_utils import layer_to_records
+from .postgis_dialog import add_postgis_layer
+from .result_layers import create_result_layer
 
 
 class DiffDock(QDockWidget):
@@ -49,7 +46,7 @@ class DiffDock(QDockWidget):
         super().__init__("Layer Diff")
         self.iface = iface
         self.result = None
-        self.result_layers = []
+        self.result_layers: list[QgsVectorLayer] = []
 
         self.setMinimumWidth(350)
         self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
@@ -58,7 +55,16 @@ class DiffDock(QDockWidget):
         self.setWidget(central)
         layout = QVBoxLayout(central)
 
-        # Layer pickers
+        self._build_layer_pickers(layout)
+        self._build_postgis_button(layout)
+        self._build_key_field(layout)
+        self._build_options(layout)
+        self._build_run_button(layout)
+        self._build_summary(layout)
+        self._build_results_table(layout)
+        self._build_export_buttons(layout)
+
+    def _build_layer_pickers(self, layout: QVBoxLayout) -> None:
         layout.addWidget(QLabel("<b>Layer A</b> (before)"))
         self.layer_a_combo = QgsMapLayerComboBox()
         self.layer_a_combo.setFilters(QgsMapLayerProxyModel.VectorLayer)
@@ -69,14 +75,14 @@ class DiffDock(QDockWidget):
         self.layer_b_combo.setFilters(QgsMapLayerProxyModel.VectorLayer)
         layout.addWidget(self.layer_b_combo)
 
-        # PostGIS connection
+    def _build_postgis_button(self, layout: QVBoxLayout) -> None:
         pgis_layout = QHBoxLayout()
         self.pgis_btn = QPushButton("Add PostGIS Layer")
         self.pgis_btn.clicked.connect(self._add_postgis_layer)
         pgis_layout.addWidget(self.pgis_btn)
         layout.addLayout(pgis_layout)
 
-        # Key field
+    def _build_key_field(self, layout: QVBoxLayout) -> None:
         layout.addWidget(QLabel("<b>Match by key field</b> (optional)"))
         key_layout = QHBoxLayout()
         self.key_combo = QComboBox()
@@ -88,7 +94,7 @@ class DiffDock(QDockWidget):
         key_layout.addWidget(self.use_key_check)
         layout.addLayout(key_layout)
 
-        # Options
+    def _build_options(self, layout: QVBoxLayout) -> None:
         opts = QGroupBox("Options")
         opts_layout = QVBoxLayout(opts)
         self.compare_geom_check = QCheckBox("Compare geometry")
@@ -98,7 +104,6 @@ class DiffDock(QDockWidget):
         self.compare_attrs_check.setChecked(True)
         opts_layout.addWidget(self.compare_attrs_check)
 
-        # Geometry tolerance slider
         tol_layout = QHBoxLayout()
         tol_layout.addWidget(QLabel("Geometry tolerance:"))
         self.tolerance_spin = QDoubleSpinBox()
@@ -111,7 +116,6 @@ class DiffDock(QDockWidget):
         tol_layout.addWidget(self.tolerance_spin)
         opts_layout.addLayout(tol_layout)
 
-        # Ignore fields
         ignore_layout = QHBoxLayout()
         ignore_layout.addWidget(QLabel("Ignore fields:"))
         self.ignore_fields_edit = QLineEdit()
@@ -120,31 +124,29 @@ class DiffDock(QDockWidget):
         ignore_layout.addWidget(self.ignore_fields_edit)
         opts_layout.addLayout(ignore_layout)
 
-        # Summary-only checkbox for reports
         self.summary_only_check = QCheckBox("Summary-only report (no per-feature details)")
         opts_layout.addWidget(self.summary_only_check)
 
         layout.addWidget(opts)
 
-        # Run button
+    def _build_run_button(self, layout: QVBoxLayout) -> None:
         self.run_btn = QPushButton("Compute Diff")
         self.run_btn.clicked.connect(self._run_diff)
         self.run_btn.setStyleSheet("QPushButton { background-color: #4CAF50; color: white; padding: 8px; font-weight: bold; }")
         layout.addWidget(self.run_btn)
 
-        # Summary
+    def _build_summary(self, layout: QVBoxLayout) -> None:
         self.summary_label = QLabel("")
         self.summary_label.setWordWrap(True)
         layout.addWidget(self.summary_label)
 
-        # Results table
+    def _build_results_table(self, layout: QVBoxLayout) -> None:
         self.table = QTableWidget(0, 4)
         self.table.setHorizontalHeaderLabels(["Key", "Type", "Geometry Changed", "Field Changes"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.cellClicked.connect(self._on_cell_clicked)
         layout.addWidget(self.table)
 
-        # Per-field change detail view (one row per changed field, old → new)
         self.detail_label = QLabel("<i>Click a modified row to see field-by-field changes</i>")
         self.detail_label.setWordWrap(True)
         layout.addWidget(self.detail_label)
@@ -154,7 +156,7 @@ class DiffDock(QDockWidget):
         self.detail_table.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.detail_table)
 
-        # Export buttons
+    def _build_export_buttons(self, layout: QVBoxLayout) -> None:
         export_layout = QHBoxLayout()
         self.export_html_btn = QPushButton("Export HTML")
         self.export_html_btn.clicked.connect(self._export_html)
@@ -164,70 +166,17 @@ class DiffDock(QDockWidget):
         export_layout.addWidget(self.export_csv_btn)
         layout.addLayout(export_layout)
 
-    def _update_fields(self):
+    def _update_fields(self) -> None:
         self.key_combo.clear()
         layer = self.layer_a_combo.currentLayer()
         if layer:
             for field in layer.fields():
                 self.key_combo.addItem(field.name())
 
-    def _add_postgis_layer(self):
-        """Open a dialog to connect to a PostGIS layer and add it to the project."""
-        from qgis.core import QgsDataSourceUri, QgsVectorLayer
-        from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QLineEdit
+    def _add_postgis_layer(self) -> None:
+        add_postgis_layer(self, self.layer_b_combo)
 
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Add PostGIS Layer")
-        form = QFormLayout(dialog)
-
-        host_edit = QLineEdit("localhost")
-        port_edit = QLineEdit("5432")
-        db_edit = QLineEdit()
-        user_edit = QLineEdit()
-        pw_edit = QLineEdit()
-        pw_edit.setEchoMode(QLineEdit.Password)
-        table_edit = QLineEdit()
-        table_edit.setPlaceholderText("schema.table_name")
-
-        form.addRow("Host:", host_edit)
-        form.addRow("Port:", port_edit)
-        form.addRow("Database:", db_edit)
-        form.addRow("Username:", user_edit)
-        form.addRow("Password:", pw_edit)
-        form.addRow("Table:", table_edit)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        form.addRow(buttons)
-
-        if dialog.exec_() != QDialog.Accepted:
-            return
-
-        uri = QgsDataSourceUri()
-        uri.setConnection(
-            host_edit.text(),
-            port_edit.text(),
-            db_edit.text(),
-            user_edit.text(),
-            pw_edit.text(),
-        )
-        table = table_edit.text()
-        if "." in table:
-            schema, name = table.split(".", 1)
-        else:
-            schema, name = "public", table
-        uri.setDataSource(schema, name, "geom")
-
-        layer = QgsVectorLayer(uri.uri(), f"pg_{name}", "postgres")
-        if not layer.isValid():
-            QMessageBox.critical(self, "Error", f"Failed to load PostGIS layer: {table}")
-            return
-
-        QgsProject.instance().addMapLayer(layer)
-        self.layer_b_combo.setLayer(layer)
-
-    def _run_diff(self):
+    def _run_diff(self) -> None:
         layer_a = self.layer_a_combo.currentLayer()
         layer_b = self.layer_b_combo.currentLayer()
 
@@ -235,17 +184,14 @@ class DiffDock(QDockWidget):
             QMessageBox.warning(self, "Error", "Select both Layer A and Layer B.")
             return
 
-        # CRS warning
         if not layer_a.crs().isValid() or not layer_b.crs().isValid():
             QMessageBox.warning(
-                self,
-                "CRS Warning",
+                self, "CRS Warning",
                 "One or both layers have an invalid CRS. Results may be incorrect.",
             )
         elif layer_a.crs() != layer_b.crs():
             QMessageBox.information(
-                self,
-                "CRS Reprojection",
+                self, "CRS Reprojection",
                 f"Layer B will be reprojected from {layer_b.crs().authid()} "
                 f"to {layer_a.crs().authid()} for comparison.",
             )
@@ -262,9 +208,8 @@ class DiffDock(QDockWidget):
         ) if ignore_fields_text else None
 
         try:
-            target_layer = layer_a
-            records_a = self._layer_to_records(layer_a, target_layer, key_field, ignore_fields)
-            records_b = self._layer_to_records(layer_b, target_layer, key_field, ignore_fields, is_second=True)
+            records_a = layer_to_records(layer_a, layer_a, key_field, ignore_fields)
+            records_b = layer_to_records(layer_b, layer_a, key_field, ignore_fields)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to read layers: {e}")
             return
@@ -278,60 +223,18 @@ class DiffDock(QDockWidget):
             ignore_fields=ignore_fields,
         )
 
-        # Show duplicate key warnings
         if self.result.warnings:
-            QMessageBox.warning(
-                self,
-                "Duplicate Keys",
-                "\n".join(self.result.warnings),
-            )
+            QMessageBox.warning(self, "Duplicate Keys", "\n".join(self.result.warnings))
 
         self._display_results(layer_a, layer_b)
 
-    def _layer_to_records(self, layer, other_layer, key_field, ignore_fields=None, is_second=False):
-        """Convert a QgsVectorLayer to FeatureRecords, reprojecting if needed."""
-        records = []
-        needs_reproject = False
-        if layer.crs() != other_layer.crs():
-            needs_reproject = True
-            transform = QgsCoordinateTransform(
-                layer.crs(), other_layer.crs(), QgsProject.instance()
-            )
-
-        key_idx = layer.fields().indexOf(key_field) if key_field else -1
-
-        for feat in layer.getFeatures():
-            key = feat.attribute(key_idx) if key_idx >= 0 else feat.id()
-
-            attrs = {}
-            for field in feat.fields():
-                fname = field.name()
-                if key_field and fname == key_field:
-                    continue
-                if ignore_fields and fname in ignore_fields:
-                    continue
-                val = feat.attribute(fname)
-                if hasattr(val, "toString"):
-                    val = val.toString()
-                attrs[fname] = val
-
-            geom = feat.geometry()
-            if needs_reproject:
-                geom.transform(transform)
-
-            wkt = geom.asWkt() if geom and not geom.isEmpty() else ""
-
-            records.append(FeatureRecord(key=str(key), attrs=attrs, wkt=wkt))
-
-        return records
-
-    def _clear_results(self):
+    def _clear_results(self) -> None:
         for layer in self.result_layers:
             QgsProject.instance().removeMapLayer(layer)
         self.result_layers = []
         self.table.setRowCount(0)
 
-    def _display_results(self, layer_a, layer_b):
+    def _display_results(self, layer_a, layer_b) -> None:
         if not self.result:
             return
 
@@ -369,76 +272,21 @@ class DiffDock(QDockWidget):
             self.table.setItem(row, 3, QTableWidgetItem(changes))
             row += 1
 
-        # Create styled result layers
         if s['added']:
-            self._create_result_layer("added", self.result.added, QColor(76, 175, 80), layer_a)
+            layer = create_result_layer("added", self.result.added, QColor(76, 175, 80), layer_a)
+            self.result_layers.append(layer)
         if s['removed']:
-            self._create_result_layer("removed", self.result.removed, QColor(244, 67, 54), layer_a)
+            layer = create_result_layer("removed", self.result.removed, QColor(244, 67, 54), layer_a)
+            self.result_layers.append(layer)
         if s['modified']:
             mod_records = [
                 FeatureRecord(key=m.key, attrs={"key": m.key}, wkt=m.new_wkt)
                 for m in self.result.modified
             ]
-            self._create_result_layer("modified", mod_records, QColor(255, 152, 0), layer_a)
+            layer = create_result_layer("modified", mod_records, QColor(255, 152, 0), layer_a)
+            self.result_layers.append(layer)
 
-    def _create_result_layer(self, name, records, color, source_layer):
-        geom_type = source_layer.geometryType()
-        if geom_type == 0:
-            geom_type_str = "Point"
-        elif geom_type == 1:
-            geom_type_str = "LineString"
-        else:
-            geom_type_str = "Polygon"
-
-        crs = source_layer.crs().authid()
-        uri = f"{geom_type_str}?crs={crs}&field=key:string"
-        layer = QgsVectorLayer(uri, f"diff_{name}", "memory")
-        dp = layer.dataProvider()
-
-        features = []
-        for rec in records:
-            if not rec.wkt:
-                continue
-            feat = QgsFeature()
-            feat.setGeometry(QgsGeometry.fromWkt(rec.wkt))
-            feat.setAttributes([rec.key])
-            features.append(feat)
-
-        dp.addFeatures(features)
-        layer.updateExtents()
-
-        symbol = self._make_symbol(geom_type, color)
-        if symbol is not None:
-            layer.setRenderer(QgsSingleSymbolRenderer(symbol))
-
-        QgsProject.instance().addMapLayer(layer)
-        self.result_layers.append(layer)
-
-    @staticmethod
-    def _make_symbol(geom_type: int, color: QColor):
-        """Build the right QGIS symbol class for the layer's geometry type.
-
-        geom_type: 0=Point, 1=Line, 2=Polygon (QgsWkbTypes enum values).
-        """
-        if geom_type == 0:  # Point
-            return QgsMarkerSymbol.createSimple({
-                "color": color.name(),
-                "outline_color": color.darker(150).name(),
-                "size": "3.0",
-            })
-        if geom_type == 1:  # Line
-            return QgsLineSymbol.createSimple({
-                "color": color.name(),
-                "width": "1.5",
-            })
-        # Polygon (or unknown — fall back to a fill)
-        return QgsFillSymbol.createSimple({
-            "color": color.name(),
-            "outline_color": color.darker(120).name(),
-            "outline_width": "0.5",
-        })
-
-    def _on_cell_clicked(self, row, col):
+    def _on_cell_clicked(self, row: int, col: int) -> None:
         if not self.result:
             return
         n_added = len(self.result.added)
@@ -450,13 +298,12 @@ class DiffDock(QDockWidget):
             return
         mod = self.result.modified[mod_idx]
 
-        # Populate the field-by-field detail table
         self.detail_table.setRowCount(len(mod.field_changes))
         for i, fc in enumerate(mod.field_changes):
             old_item = QTableWidgetItem("" if fc.old is None else str(fc.old))
             new_item = QTableWidgetItem("" if fc.new is None else str(fc.new))
-            old_item.setBackground(QColor(244, 67, 54, 50))  # red tint
-            new_item.setBackground(QColor(76, 175, 80, 50))  # green tint
+            old_item.setBackground(QColor(244, 67, 54, 50))
+            new_item.setBackground(QColor(76, 175, 80, 50))
             self.detail_table.setItem(i, 0, QTableWidgetItem(fc.field))
             self.detail_table.setItem(i, 1, old_item)
             self.detail_table.setItem(i, 2, new_item)
@@ -465,7 +312,7 @@ class DiffDock(QDockWidget):
             geom_row = self.detail_table.rowCount()
             self.detail_table.insertRow(geom_row)
             geom_item = QTableWidgetItem("(geometry)")
-            geom_item.setBackground(QColor(255, 152, 0, 50))  # amber tint
+            geom_item.setBackground(QColor(255, 152, 0, 50))
             self.detail_table.setItem(geom_row, 0, geom_item)
             self.detail_table.setItem(geom_row, 1, QTableWidgetItem("Changed"))
             self.detail_table.setItem(geom_row, 2, QTableWidgetItem("Changed"))
@@ -476,14 +323,13 @@ class DiffDock(QDockWidget):
             f"{', geometry changed' if mod.geometry_changed else ''}</i>)"
         )
 
-        # Flash + zoom on canvas
         if mod.new_wkt:
             geom = QgsGeometry.fromWkt(mod.new_wkt)
             if geom and not geom.isEmpty():
                 self.iface.mapCanvas().flashGeometries([geom])
                 self.iface.mapCanvas().zoomToFeatureExtent(geom.boundingBox())
 
-    def _export_html(self):
+    def _export_html(self) -> None:
         if not self.result:
             return
         path, _ = QFileDialog.getSaveFileName(self, "Export HTML", "", "HTML (*.html)")
@@ -493,7 +339,7 @@ class DiffDock(QDockWidget):
             with open(path, "w") as f:
                 f.write(html)
 
-    def _export_csv(self):
+    def _export_csv(self) -> None:
         if not self.result:
             return
         path, _ = QFileDialog.getSaveFileName(self, "Export CSV", "", "CSV (*.csv)")
@@ -502,7 +348,7 @@ class DiffDock(QDockWidget):
             with open(path, "w") as f:
                 f.write(csv_content)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         self._clear_results()
         self.closing.emit()
         super().closeEvent(event)
