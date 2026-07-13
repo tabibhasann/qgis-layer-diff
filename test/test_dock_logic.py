@@ -8,8 +8,8 @@ edge cases that weren't in test_differ.py.
 
 from core.differ import compute_diff
 from core.matching import match_by_geometry
-from core.models import FeatureRecord, DiffResult
-from core.report import to_html, to_csv
+from core.models import DiffResult, FeatureRecord
+from core.report import to_csv, to_html
 
 
 def make_record(key, attrs=None, wkt=""):
@@ -84,7 +84,7 @@ class TestHtmlReport:
             FeatureRecord(key="1", attrs={}, wkt="POINT(0 0)"),  # placeholder
         ])
         # Use a real ModifiedFeature for the report
-        from core.models import ModifiedFeature, FieldChange
+        from core.models import FieldChange, ModifiedFeature
         result = DiffResult(
             added=[],
             removed=[],
@@ -101,7 +101,7 @@ class TestHtmlReport:
 
     def test_html_escapes_special_chars(self):
         """XSS attempt in attributes should be HTML-escaped."""
-        from core.models import ModifiedFeature, FieldChange
+        from core.models import FieldChange, ModifiedFeature
         result = DiffResult(modified=[
             ModifiedFeature(
                 key="<script>alert(1)</script>",
@@ -118,7 +118,7 @@ class TestHtmlReport:
 
 class TestCsvReport:
     def test_csv_quotes_correctly(self):
-        from core.models import ModifiedFeature, FieldChange
+        from core.models import FieldChange, ModifiedFeature
         result = DiffResult(
             added=[make_record("with,comma")],
             modified=[ModifiedFeature(

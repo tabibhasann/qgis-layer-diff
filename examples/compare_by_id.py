@@ -19,7 +19,7 @@ result = compare_layers(
     key_field="parcel_id",
 )
 
-print(f"Comparison complete:")
+print("Comparison complete:")
 print(f"  Added:    {len(result.added)} features")
 print(f"  Removed:  {len(result.removed)} features")
 print(f"  Modified: {len(result.modified)} features")

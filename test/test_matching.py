@@ -1,7 +1,7 @@
 """Tests for matching module."""
 
+from core.matching import match_by_geometry, match_by_key
 from core.models import FeatureRecord
-from core.matching import match_by_key, match_by_geometry
 
 
 class TestMatchByKey:

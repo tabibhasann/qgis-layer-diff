@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from core.models import DiffResult, FeatureRecord, ModifiedFeature, FieldChange
 from core.differ import compute_diff
-from core.matching import match_by_key, match_by_geometry
+from core.matching import match_by_geometry, match_by_key
+from core.models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
 
 
 def make_record(key: str, attrs: dict | None = None, wkt: str = "") -> FeatureRecord:

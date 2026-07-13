@@ -106,7 +106,7 @@ def to_csv(result: DiffResult) -> str:
     """Generate a CSV report from a DiffResult using proper CSV formatting."""
     output = StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
-    
+
     # Header
     writer.writerow(["type", "key", "field", "old_value", "new_value"])
 

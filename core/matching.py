@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from .models import FeatureRecord
 
@@ -63,8 +64,8 @@ def match_by_geometry(
 
     Uses shapely STRtree spatial index for efficient O(n log n) matching.
     """
-    from shapely import wkt as _wkt
     from shapely import STRtree
+    from shapely import wkt as _wkt
 
     # Parse geometries for B and build spatial index
     b_geoms = []
@@ -86,7 +87,7 @@ def match_by_geometry(
             "only_b": list(records_b),
         }
     tree = STRtree(b_geoms)
-    
+
     matched_pairs = []
     unmatched_a = []
     used_b = set()
@@ -95,7 +96,7 @@ def match_by_geometry(
     for idx, rec_a in enumerate(records_a):
         if progress_callback and idx % 10 == 0:
             progress_callback(idx, total, "Matching features")
-        
+
         try:
             ga = _wkt.loads(rec_a.wkt)
             if ga is None or ga.is_empty:
@@ -109,13 +110,13 @@ def match_by_geometry(
         # When tolerance > 0, buffer the query geometry to expand the search area
         query_geom = ga.buffer(tolerance) if tolerance > 0 else ga
         candidates = tree.query(query_geom)
-        
+
         found = False
         for candidate_idx in candidates:
             j = valid_b_indices[candidate_idx]
             if j in used_b:
                 continue
-            
+
             gb = b_geoms[candidate_idx]
             if _geoms_equal(ga, gb, tolerance):
                 matched_pairs.append((rec_a, records_b[j]))

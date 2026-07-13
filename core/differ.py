@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
-from .matching import match_by_key, match_by_geometry
+from .matching import match_by_geometry, match_by_key
 from .models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
 
 
@@ -69,7 +69,7 @@ def compute_diff(
     for i, (rec_a, rec_b) in enumerate(matched):
         if progress_callback and i % 10 == 0:
             progress_callback(i, len(matched), "Comparing features")
-        
+
         field_changes: list[FieldChange] = []
         geom_changed = False
 

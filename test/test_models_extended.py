@@ -1,8 +1,7 @@
 """Extended model and matching tests for qgis_layer_diff."""
 
-import pytest
-from core.models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
 from core.matching import match_by_key
+from core.models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
 
 
 class TestFeatureRecordExtended:

@@ -12,10 +12,10 @@ Compare two versions of a vector layer and instantly see what changed: added fea
 | Plugin | Key match | Geometry match | Tolerance | HTML report | CSV export | CRS handling |
 |---|---|---|---|---|---|---|
 | **qgis-layer-diff** | ✅ | ✅ (R-tree) | ✅ | ✅ | ✅ | ✅ |
-| LayerDiffViewer | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Geometry Comparator | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Table Compare | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| QGIS Detect Changes | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| [LayerDiffViewer](https://plugins.qgis.org/plugins/LayerDiffViewer/) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| [Geometry Comparator](https://plugins.qgis.org/plugins/geometry_comparator/) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| [Table Compare](https://plugins.qgis.org/plugins/tablecompare/) | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| [QGIS Detect Changes](https://plugins.qgis.org/plugins/detectchanges/) | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 
 qgis-layer-diff is the only plugin that combines key + geometry matching, tolerance control, CRS reprojection, and HTML/CSV export.
 
@@ -23,7 +23,8 @@ qgis-layer-diff is the only plugin that combines key + geometry matching, tolera
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-GPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/tabibhasann/qgis-layer-diff/workflows/CI/badge.svg)](../../actions)
-[![Tests](https://img.shields.io/badge/tests-124%20passed-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
+[![Coverage](https://img.shields.io/badge/coverage-70%25-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
+[![Tests](https://img.shields.io/badge/tests-160%2B%20passed-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
 [![Version](https://img.shields.io/badge/Version-0.2.0-orange.svg)](metadata.txt)
 
 ## ✨ Features

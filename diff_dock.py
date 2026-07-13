@@ -2,23 +2,42 @@
 
 from __future__ import annotations
 
-from qgis.PyQt.QtWidgets import (
-    QDockWidget, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QComboBox, QLabel, QTableWidget, QTableWidgetItem, QFileDialog,
-    QCheckBox, QGroupBox, QMessageBox, QDoubleSpinBox, QLineEdit,
-)
-from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.core import (
-    QgsVectorLayer, QgsProject, QgsMapLayerProxyModel,
-    QgsCoordinateTransform, QgsFeature, QgsGeometry,
-    QgsSingleSymbolRenderer, QgsFillSymbol, QgsMarkerSymbol, QgsLineSymbol,
+    QgsCoordinateTransform,
+    QgsFeature,
+    QgsFillSymbol,
+    QgsGeometry,
+    QgsLineSymbol,
+    QgsMapLayerProxyModel,
+    QgsMarkerSymbol,
+    QgsProject,
+    QgsSingleSymbolRenderer,
+    QgsVectorLayer,
 )
 from qgis.gui import QgsMapLayerComboBox
+from qgis.PyQt.QtCore import Qt, pyqtSignal
 from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDockWidget,
+    QDoubleSpinBox,
+    QFileDialog,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from .core.models import FeatureRecord
 from .core.differ import compute_diff
-from .core.report import to_html, to_csv
+from .core.models import FeatureRecord
+from .core.report import to_csv, to_html
 
 
 class DiffDock(QDockWidget):
@@ -154,8 +173,8 @@ class DiffDock(QDockWidget):
 
     def _add_postgis_layer(self):
         """Open a dialog to connect to a PostGIS layer and add it to the project."""
-        from qgis.PyQt.QtWidgets import QDialog, QFormLayout, QDialogButtonBox, QLineEdit
         from qgis.core import QgsDataSourceUri, QgsVectorLayer
+        from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QLineEdit
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Add PostGIS Layer")

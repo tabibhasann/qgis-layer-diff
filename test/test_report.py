@@ -1,7 +1,7 @@
 """Tests for report formatting."""
 
-from core.models import DiffResult, FeatureRecord, ModifiedFeature, FieldChange
-from core.report import to_html, to_csv
+from core.models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
+from core.report import to_csv, to_html
 
 
 class TestHTMLReport:

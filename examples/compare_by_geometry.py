@@ -15,7 +15,7 @@ result = compare_layers(
     tolerance=0.5,  # meters
 )
 
-print(f"Geometry-based comparison:")
+print("Geometry-based comparison:")
 print(f"  Added:    {len(result.added)}")
 print(f"  Removed:  {len(result.removed)}")
 print(f"  Modified: {len(result.modified)} (geometry changed)")

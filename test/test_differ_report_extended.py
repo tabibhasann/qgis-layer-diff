@@ -1,10 +1,9 @@
 """Extended tests for differ, models, and report modules."""
 
-import pytest
-from core.models import FeatureRecord, FieldChange, ModifiedFeature, DiffResult
 from core.differ import compute_diff
-from core.report import to_html, to_csv
 from core.matching import match_by_key
+from core.models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
+from core.report import to_csv, to_html
 
 
 class TestDiffResultModels:
