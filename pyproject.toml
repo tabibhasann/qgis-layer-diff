@@ -1,0 +1,46 @@
+[project]
+name = "qgis-layer-diff"
+version = "0.3.0"
+description = "Visual diff for QGIS vector layers — compare two versions and see added, removed, and modified features"
+readme = "README.md"
+license = { text = "GPL-2.0-or-later" }
+authors = [{ name = "Tabib Hasan", email = "tabibhasann@users.noreply.github.com" }]
+keywords = [
+    "qgis",
+    "diff",
+    "compare",
+    "version",
+    "change",
+    "qa",
+    "review",
+    "spatial",
+    "geometry",
+    "vector",
+    "quality-assurance",
+    "version-control",
+    "data-qa",
+    "sync",
+    "layer-comparison",
+    "field-mapping",
+    "attribute-diff",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: GIS",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
