@@ -4,10 +4,26 @@
 
 Compare two versions of a vector layer and instantly see what changed: added features (green), removed features (red), and modified features (orange). Detect geometry changes, attribute changes, or both. Export detailed reports in HTML or CSV format.
 
+
+**Demo:** Screenshot walkthrough: see [Quickstart](#quickstart) above
+
+### How it compares
+
+| Plugin | Key match | Geometry match | Tolerance | HTML report | CSV export | CRS handling |
+|---|---|---|---|---|---|---|
+| **qgis-layer-diff** | ✅ | ✅ (R-tree) | ✅ | ✅ | ✅ | ✅ |
+| LayerDiffViewer | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Geometry Comparator | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Table Compare | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| QGIS Detect Changes | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+
+qgis-layer-diff is the only plugin that combines key + geometry matching, tolerance control, CRS reprojection, and HTML/CSV export.
+
 [![QGIS](https://img.shields.io/badge/QGIS-3.28+-green?logo=qgis)](https://qgis.org)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-GPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/tabibhasann/qgis-layer-diff/workflows/CI/badge.svg)](../../actions)
+[![Tests](https://img.shields.io/badge/tests-124%20passed-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
 [![Version](https://img.shields.io/badge/Version-0.2.0-orange.svg)](metadata.txt)
 
 ## ✨ Features
@@ -37,7 +53,7 @@ Compare two versions of a vector layer and instantly see what changed: added fea
 - **CSV export:** Machine-readable format for further analysis (properly escaped using csv.writer)
 - **Progress indicators:** Real-time feedback during diff computation for large datasets
 
-### Robust & Production-Ready
+### Built for Real GIS Workflows
 - **CRS handling:** Automatic reprojection when layers use different coordinate systems
 - **Performance optimized:** R-tree spatial indexing for fast geometry matching
 - **Error handling:** Graceful handling of edge cases and invalid data
@@ -333,6 +349,14 @@ qgis-layer-diff/
 - **Extensibility:** Easy to add new matching algorithms or export formats
 - **Performance:** Optimized data structures and algorithms
 
+## Plugin Reference
+
+After installation, the plugin appears under **Plugins → Layer Diff** in the QGIS menu.
+
+- **Layer Diff** — Open the diff dialog to select two layers and compare
+- **Help** — View inline documentation and examples
+- **About** — Version, author, and license information
+
 ## 🤝 Contributing
 
 Contributions are welcome! Here's how to get started:
@@ -445,6 +469,42 @@ See [LICENSE](LICENSE) for full license text.
 - **Documentation:** [https://github.com/tabibhasann/qgis-layer-diff/wiki](https://github.com/tabibhasann/qgis-layer-diff/wiki)
 - **QGIS Plugin Repository:** [https://plugins.qgis.org/plugins/qgis-layer-diff/](https://plugins.qgis.org/plugins/qgis-layer-diff/)
 
+## API
+
+### Python API
+
+```python
+from qgis_layer_diff.core.differ import compute_diff
+from qgis_layer_diff.core.models import FeatureRecord
+from qgis_layer_diff.core.report import to_html, to_csv
+
+# Build feature records from QGIS layers
+records_a = [FeatureRecord(key=f.id(), attributes=f.attributes(), 
+                            geometry=f.geometry().asWkt()) 
+             for f in layer_a.getFeatures()]
+records_b = [FeatureRecord(key=f.id(), attributes=f.attributes(),
+                            geometry=f.geometry().asWkt())
+             for f in layer_b.getFeatures()]
+
+# Compute diff (key-based or geometry-based)
+result = compute_diff(records_a, records_b, match_by='key')
+
+# Generate reports
+html = to_html(result)
+csv_text = to_csv(result)
+```
+
+### Core Modules
+
+- **`core/models.py`** — `FeatureRecord`, `FieldChange`, `ModifiedFeature`, `DiffResult`
+- **`core/matching.py`** — `match_by_key`, `match_by_geometry` (STRtree spatial index)
+- **`core/differ.py`** — `compute_diff` orchestrating match → compare → result
+- **`core/report.py`** — `to_html` and `to_csv` report generators with XSS escaping
+
 ---
 
 **Made with ❤️ for the QGIS community**
+
+---
+
+⭐ Star [tabibhasann/qgis-layer-diff](https://github.com/tabibhasann/qgis-layer-diff) on GitHub if this helped you.
