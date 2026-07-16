@@ -5,7 +5,6 @@ this file focuses on the pure helpers and additional differ / matching
 edge cases that weren't in test_differ.py.
 """
 
-
 from core.differ import compute_diff
 from core.matching import match_by_geometry
 from core.models import DiffResult, FeatureRecord
@@ -80,18 +79,24 @@ class TestComputeDiffEdgeCases:
 
 class TestHtmlReport:
     def test_html_contains_modified_rows(self):
-        result = DiffResult(modified=[
-            FeatureRecord(key="1", attrs={}, wkt="POINT(0 0)"),  # placeholder
-        ])
+        result = DiffResult(
+            modified=[
+                FeatureRecord(key="1", attrs={}, wkt="POINT(0 0)"),  # placeholder
+            ]
+        )
         # Use a real ModifiedFeature for the report
         from core.models import FieldChange, ModifiedFeature
+
         result = DiffResult(
             added=[],
             removed=[],
-            modified=[ModifiedFeature(
-                key="42", geometry_changed=True,
-                field_changes=[FieldChange("name", "old", "new")],
-            )],
+            modified=[
+                ModifiedFeature(
+                    key="42",
+                    geometry_changed=True,
+                    field_changes=[FieldChange("name", "old", "new")],
+                )
+            ],
         )
         html = to_html(result)
         assert "42" in html
@@ -102,13 +107,16 @@ class TestHtmlReport:
     def test_html_escapes_special_chars(self):
         """XSS attempt in attributes should be HTML-escaped."""
         from core.models import FieldChange, ModifiedFeature
-        result = DiffResult(modified=[
-            ModifiedFeature(
-                key="<script>alert(1)</script>",
-                geometry_changed=False,
-                field_changes=[FieldChange("name", "<img src=x>", "ok")],
-            )
-        ])
+
+        result = DiffResult(
+            modified=[
+                ModifiedFeature(
+                    key="<script>alert(1)</script>",
+                    geometry_changed=False,
+                    field_changes=[FieldChange("name", "<img src=x>", "ok")],
+                )
+            ]
+        )
         html = to_html(result)
         # Raw script tag must not be present
         assert "<script>alert(1)</script>" not in html
@@ -119,12 +127,16 @@ class TestHtmlReport:
 class TestCsvReport:
     def test_csv_quotes_correctly(self):
         from core.models import FieldChange, ModifiedFeature
+
         result = DiffResult(
             added=[make_record("with,comma")],
-            modified=[ModifiedFeature(
-                key="1", geometry_changed=False,
-                field_changes=[FieldChange("name", 'has "quotes"', "fine")],
-            )],
+            modified=[
+                ModifiedFeature(
+                    key="1",
+                    geometry_changed=False,
+                    field_changes=[FieldChange("name", 'has "quotes"', "fine")],
+                )
+            ],
         )
         csv = to_csv(result)
         # csv.writer should quote fields containing commas

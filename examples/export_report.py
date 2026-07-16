@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """export_report.py — Export a layer diff report as HTML."""
+
 from qgis.core import QgsVectorLayer
 from qgis_layer_diff import compare_layers, export_report
 

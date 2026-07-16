@@ -78,10 +78,10 @@ def to_html(result: DiffResult, title: str = "Layer Diff Report", summary_only: 
 <body>
     <h1>{safe_title}</h1>
     <div class="summary">
-        <div class="added">+{s['added']} Added</div>
-        <div class="removed">-{s['removed']} Removed</div>
-        <div class="modified">~{s['modified']} Modified</div>
-        <div class="unchanged">{s['unchanged']} Unchanged</div>
+        <div class="added">+{s["added"]} Added</div>
+        <div class="removed">-{s["removed"]} Removed</div>
+        <div class="modified">~{s["modified"]} Modified</div>
+        <div class="unchanged">{s["unchanged"]} Unchanged</div>
     </div>{detail_section}
 </body>
 </html>"""
@@ -91,9 +91,7 @@ def _modified_rows(result: DiffResult) -> str:
     rows = []
     for m in result.modified:
         if m.geometry_changed:
-            rows.append(
-                f"<tr><td>{_esc(m.key)}</td><td><em>geometry</em></td><td colspan='2'>Changed</td></tr>"
-            )
+            rows.append(f"<tr><td>{_esc(m.key)}</td><td><em>geometry</em></td><td colspan='2'>Changed</td></tr>")
         for fc in m.field_changes:
             rows.append(
                 f"<tr><td>{_esc(m.key)}</td><td>{_esc(fc.field)}</td>"

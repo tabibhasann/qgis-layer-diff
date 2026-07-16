@@ -1,5 +1,7 @@
 # qgis-layer-diff 🔄
 
+> **Pre-release:** v0.3.0 is not yet listed in the official QGIS Plugin Repository. Install the repository checkout manually and treat marketplace instructions as post-release guidance.
+
 **Visual diff for QGIS vector layers — "git diff" for geospatial data.**
 
 Compare two versions of a vector layer and instantly see what changed: added features (green), removed features (red), and modified features (orange). Detect geometry changes, attribute changes, or both. Export detailed reports in HTML or CSV format.
@@ -17,15 +19,15 @@ Compare two versions of a vector layer and instantly see what changed: added fea
 | [Table Compare](https://plugins.qgis.org/plugins/tablecompare/) | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ |
 | [QGIS Detect Changes](https://plugins.qgis.org/plugins/detectchanges/) | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 
-qgis-layer-diff is the only plugin that combines key + geometry matching, tolerance control, CRS reprojection, and HTML/CSV export.
+qgis-layer-diff combines key and geometry matching, tolerance control, CRS reprojection, and HTML/CSV export in one workflow.
 
 [![QGIS](https://img.shields.io/badge/QGIS-3.28+-green?logo=qgis)](https://qgis.org)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-GPL--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/tabibhasann/qgis-layer-diff/workflows/CI/badge.svg)](../../actions)
-[![Coverage](https://img.shields.io/badge/coverage-70%25-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
-[![Tests](https://img.shields.io/badge/tests-160%2B%20passed-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
-[![Version](https://img.shields.io/badge/Version-0.2.0-orange.svg)](metadata.txt)
+[![Coverage](https://img.shields.io/badge/coverage-97%25-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
+[![Tests](https://img.shields.io/badge/tests-169%20passed-brightgreen)](https://github.com/tabibhasann/qgis-layer-diff/actions)
+[![Version](https://img.shields.io/badge/Version-0.3.0-orange.svg)](metadata.txt)
 
 ## ✨ Features
 
@@ -62,12 +64,9 @@ qgis-layer-diff is the only plugin that combines key + geometry matching, tolera
 
 ## 📦 Installation
 
-### From QGIS Plugin Repository (Recommended)
+### From QGIS Plugin Repository (after publication)
 
-1. Open QGIS
-2. Go to **Plugins → Manage and Install Plugins...**
-3. Search for "Layer Diff"
-4. Click **Install Plugin**
+The official listing is not live yet. Once it is published, installation will be available through **Plugins → Manage and Install Plugins...**. Until then, use the manual installation below.
 
 ### Manual Installation
 
@@ -398,28 +397,21 @@ Contributions are welcome! Here's how to get started:
 - Update documentation as needed
 - Keep commits focused and atomic
 
+## 📋 Alternatives
+
+| Tool | Type | Scope | QGIS integration | Key + geometry matching | HTML/CSV export |
+|------|------|-------|-------------------|------------------------|-----------------|
+| **qgis-layer-diff** | QGIS plugin | Diff two vector layers with visual + tabular output | Native | Both | Yes |
+| [QGIS DB Manager](https://docs.qgis.org/3.28/en/docs/user_manual/managing_data_source/opening_data.html#db-manager) | Built-in | SQL-based comparison of database layers | Native | Manual SQL | No |
+| [SAGA Change Detection](https://saga-tools.org) | Processing provider | Raster change detection | Provider | No | No |
+| [ogr2ogr](https://gdal.org/programs/ogr2ogr.html) | CLI | Format conversion + basic filtering | No | No | No |
+| Manual SQL joins | SQL | Hand-written queries to find adds/removes/changes | Via DB Manager | Key only | Manual |
+
+**Why qgis-layer-diff?** It's the only QGIS plugin that provides one-click visual diffing of two vector layers with both key-based and geometry-based matching, interactive map highlighting, and HTML/CSV export — no SQL required.
+
 ## 📋 Roadmap
 
-### v0.3.0 (Planned)
-- [ ] Multi-layer batch diff
-- [ ] Raster layer support
-- [ ] Topology change detection
-- [ ] Integration with QGIS Processing toolbox
-- [ ] Configurable change classification rules
-
-### v0.4.0 (Future)
-- [ ] 3D geometry support
-- [ ] Temporal analysis (time-series diffs)
-- [ ] Statistical summaries
-- [ ] Change visualization heatmaps
-- [ ] Export to GeoJSON/GeoPackage
-
-### v1.0.0 (Long-term)
-- [ ] Plugin marketplace distribution
-- [ ] Multi-language support
-- [ ] Cloud integration
-- [ ] API for external tools
-- [ ] Comprehensive documentation site
+The immediate gate is a manually verified v0.3.0 ZIP and publication to the official QGIS Plugin Repository. See [ROADMAP.md](ROADMAP.md) for the maintained release plan.
 
 ## 🐛 Troubleshooting
 
@@ -468,7 +460,7 @@ See [LICENSE](LICENSE) for full license text.
 
 - **Homepage:** [https://github.com/tabibhasann/qgis-layer-diff](https://github.com/tabibhasann/qgis-layer-diff)
 - **Documentation:** [https://github.com/tabibhasann/qgis-layer-diff/wiki](https://github.com/tabibhasann/qgis-layer-diff/wiki)
-- **QGIS Plugin Repository:** [https://plugins.qgis.org/plugins/qgis-layer-diff/](https://plugins.qgis.org/plugins/qgis-layer-diff/)
+- **QGIS Plugin Repository:** publication pending; install from the release ZIP for now.
 
 ## API
 
@@ -480,15 +472,15 @@ from qgis_layer_diff.core.models import FeatureRecord
 from qgis_layer_diff.core.report import to_html, to_csv
 
 # Build feature records from QGIS layers
-records_a = [FeatureRecord(key=f.id(), attributes=f.attributes(), 
-                            geometry=f.geometry().asWkt()) 
+records_a = [FeatureRecord(key=f.id(), attrs={f.name(): f.value() for f in f.attributes()},
+                            wkt=f.geometry().asWkt())
              for f in layer_a.getFeatures()]
-records_b = [FeatureRecord(key=f.id(), attributes=f.attributes(),
-                            geometry=f.geometry().asWkt())
+records_b = [FeatureRecord(key=f.id(), attrs={f.name(): f.value() for f in f.attributes()},
+                            wkt=f.geometry().asWkt())
              for f in layer_b.getFeatures()]
 
 # Compute diff (key-based or geometry-based)
-result = compute_diff(records_a, records_b, match_by='key')
+result = compute_diff(records_a, records_b, key='building_id')
 
 # Generate reports
 html = to_html(result)

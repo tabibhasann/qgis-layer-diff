@@ -37,7 +37,7 @@ from .postgis_dialog import add_postgis_layer
 from .result_layers import create_result_layer
 
 
-class DiffDock(QDockWidget):
+class DiffDock(QDockWidget):  # type: ignore[misc]
     """Dockable panel for comparing two vector layers."""
 
     closing = pyqtSignal()
@@ -132,7 +132,9 @@ class DiffDock(QDockWidget):
     def _build_run_button(self, layout: QVBoxLayout) -> None:
         self.run_btn = QPushButton("Compute Diff")
         self.run_btn.clicked.connect(self._run_diff)
-        self.run_btn.setStyleSheet("QPushButton { background-color: #4CAF50; color: white; padding: 8px; font-weight: bold; }")
+        self.run_btn.setStyleSheet(
+            "QPushButton { background-color: #4CAF50; color: white; padding: 8px; font-weight: bold; }"
+        )
         layout.addWidget(self.run_btn)
 
     def _build_summary(self, layout: QVBoxLayout) -> None:
@@ -186,12 +188,14 @@ class DiffDock(QDockWidget):
 
         if not layer_a.crs().isValid() or not layer_b.crs().isValid():
             QMessageBox.warning(
-                self, "CRS Warning",
+                self,
+                "CRS Warning",
                 "One or both layers have an invalid CRS. Results may be incorrect.",
             )
         elif layer_a.crs() != layer_b.crs():
             QMessageBox.information(
-                self, "CRS Reprojection",
+                self,
+                "CRS Reprojection",
                 f"Layer B will be reprojected from {layer_b.crs().authid()} "
                 f"to {layer_a.crs().authid()} for comparison.",
             )
@@ -203,9 +207,9 @@ class DiffDock(QDockWidget):
         compare_attrs = self.compare_attrs_check.isChecked()
         tolerance = self.tolerance_spin.value()
         ignore_fields_text = self.ignore_fields_edit.text().strip()
-        ignore_fields = set(
-            f.strip() for f in ignore_fields_text.split(",") if f.strip()
-        ) if ignore_fields_text else None
+        ignore_fields = (
+            set(f.strip() for f in ignore_fields_text.split(",") if f.strip()) if ignore_fields_text else None
+        )
 
         try:
             records_a = layer_to_records(layer_a, layer_a, key_field, ignore_fields)
@@ -215,7 +219,8 @@ class DiffDock(QDockWidget):
             return
 
         self.result = compute_diff(
-            records_a, records_b,
+            records_a,
+            records_b,
             key=key_field,
             geom_tolerance=tolerance,
             compare_geometry=compare_geom,
@@ -240,8 +245,7 @@ class DiffDock(QDockWidget):
 
         s = self.result.summary
         self.summary_label.setText(
-            f"+{s['added']} added  -{s['removed']} removed  "
-            f"~{s['modified']} modified  ={s['unchanged']} unchanged"
+            f"+{s['added']} added  -{s['removed']} removed  ~{s['modified']} modified  ={s['unchanged']} unchanged"
         )
 
         total_rows = len(self.result.added) + len(self.result.removed) + len(self.result.modified)
@@ -272,17 +276,14 @@ class DiffDock(QDockWidget):
             self.table.setItem(row, 3, QTableWidgetItem(changes))
             row += 1
 
-        if s['added']:
+        if s["added"]:
             layer = create_result_layer("added", self.result.added, QColor(76, 175, 80), layer_a)
             self.result_layers.append(layer)
-        if s['removed']:
+        if s["removed"]:
             layer = create_result_layer("removed", self.result.removed, QColor(244, 67, 54), layer_a)
             self.result_layers.append(layer)
-        if s['modified']:
-            mod_records = [
-                FeatureRecord(key=m.key, attrs={"key": m.key}, wkt=m.new_wkt)
-                for m in self.result.modified
-            ]
+        if s["modified"]:
+            mod_records = [FeatureRecord(key=m.key, attrs={"key": m.key}, wkt=m.new_wkt) for m in self.result.modified]
             layer = create_result_layer("modified", mod_records, QColor(255, 152, 0), layer_a)
             self.result_layers.append(layer)
 

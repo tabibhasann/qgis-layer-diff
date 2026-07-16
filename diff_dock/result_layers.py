@@ -23,21 +23,27 @@ def make_symbol(geom_type: int, color: QColor):
     geom_type: 0=Point, 1=Line, 2=Polygon (QgsWkbTypes enum values).
     """
     if geom_type == 0:  # Point
-        return QgsMarkerSymbol.createSimple({
-            "color": color.name(),
-            "outline_color": color.darker(150).name(),
-            "size": "3.0",
-        })
+        return QgsMarkerSymbol.createSimple(
+            {
+                "color": color.name(),
+                "outline_color": color.darker(150).name(),
+                "size": "3.0",
+            }
+        )
     if geom_type == 1:  # Line
-        return QgsLineSymbol.createSimple({
+        return QgsLineSymbol.createSimple(
+            {
+                "color": color.name(),
+                "width": "1.5",
+            }
+        )
+    return QgsFillSymbol.createSimple(
+        {
             "color": color.name(),
-            "width": "1.5",
-        })
-    return QgsFillSymbol.createSimple({
-        "color": color.name(),
-        "outline_color": color.darker(120).name(),
-        "outline_width": "0.5",
-    })
+            "outline_color": color.darker(120).name(),
+            "outline_width": "0.5",
+        }
+    )
 
 
 def create_result_layer(

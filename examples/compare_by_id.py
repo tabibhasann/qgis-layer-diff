@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """compare_by_id.py — Compare two vector layers by a key field in QGIS."""
+
 from qgis.core import QgsVectorLayer
 from qgis_layer_diff import compare_layers
 

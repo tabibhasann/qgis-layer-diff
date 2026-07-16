@@ -15,11 +15,13 @@ class TestHTMLReport:
         result = DiffResult(
             added=[FeatureRecord("3", {}, "")],
             removed=[FeatureRecord("1", {}, "")],
-            modified=[ModifiedFeature(
-                key="2",
-                geometry_changed=True,
-                field_changes=[FieldChange("name", "Old", "New")],
-            )],
+            modified=[
+                ModifiedFeature(
+                    key="2",
+                    geometry_changed=True,
+                    field_changes=[FieldChange("name", "Old", "New")],
+                )
+            ],
         )
         html = to_html(result)
         assert "+1 Added" in html

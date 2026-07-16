@@ -1,0 +1,8 @@
+version = 1
+revision = 2
+requires-python = ">=3.9"
+
+[[package]]
+name = "qgis-layer-diff"
+version = "0.3.0"
+source = { virtual = "." }

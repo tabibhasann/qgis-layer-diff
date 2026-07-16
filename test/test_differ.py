@@ -151,6 +151,7 @@ class TestDuplicateKeys:
 class TestReport:
     def test_html_contains_summary(self):
         from core.report import to_html
+
         result = DiffResult()
         html = to_html(result)
         assert "Layer Diff Report" in html
@@ -158,12 +159,15 @@ class TestReport:
 
     def test_html_summary_only(self):
         from core.report import to_html
+
         result = DiffResult(
-            modified=[ModifiedFeature(
-                key="1",
-                geometry_changed=True,
-                field_changes=[FieldChange("name", "Old", "New")],
-            )],
+            modified=[
+                ModifiedFeature(
+                    key="1",
+                    geometry_changed=True,
+                    field_changes=[FieldChange("name", "Old", "New")],
+                )
+            ],
         )
         html = to_html(result, summary_only=True)
         assert "Modified Features" not in html
@@ -171,12 +175,15 @@ class TestReport:
 
     def test_html_with_details(self):
         from core.report import to_html
+
         result = DiffResult(
-            modified=[ModifiedFeature(
-                key="1",
-                geometry_changed=True,
-                field_changes=[FieldChange("name", "Old", "New")],
-            )],
+            modified=[
+                ModifiedFeature(
+                    key="1",
+                    geometry_changed=True,
+                    field_changes=[FieldChange("name", "Old", "New")],
+                )
+            ],
         )
         html = to_html(result, summary_only=False)
         assert "Modified Features" in html
@@ -185,6 +192,7 @@ class TestReport:
 
     def test_html_with_added_removed(self):
         from core.report import to_html
+
         result = DiffResult(
             added=[FeatureRecord(key="2", attrs={}, wkt="POINT(2 2)")],
             removed=[FeatureRecord(key="0", attrs={}, wkt="POINT(0 0)")],
@@ -197,6 +205,7 @@ class TestReport:
 
     def test_html_with_warnings(self):
         from core.report import to_html
+
         result = DiffResult(warnings=["Duplicate key(s) found: 1"])
         html = to_html(result, summary_only=False)
         assert "Warnings" in html
@@ -204,6 +213,7 @@ class TestReport:
 
     def test_csv_empty(self):
         from core.report import to_csv
+
         result = DiffResult()
         csv = to_csv(result)
         assert csv.startswith("type,key,field,old_value,new_value")

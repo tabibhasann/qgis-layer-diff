@@ -27,16 +27,20 @@ class TestEndToEndDiff:
     """Full pipeline: GeoJSON → records → diff → report."""
 
     def test_full_pipeline_added_removed_modified(self, tmp_path: Path) -> None:
-        before = _make_geojson([
-            _feature(1, "A", [0, 0]),
-            _feature(2, "B", [1, 1]),
-            _feature(3, "C", [2, 2]),
-        ])
-        after = _make_geojson([
-            _feature(1, "A", [0, 0]),       # unchanged
-            _feature(2, "B2", [1, 1]),      # attribute changed
-            _feature(4, "D", [3, 3]),       # added
-        ])
+        before = _make_geojson(
+            [
+                _feature(1, "A", [0, 0]),
+                _feature(2, "B", [1, 1]),
+                _feature(3, "C", [2, 2]),
+            ]
+        )
+        after = _make_geojson(
+            [
+                _feature(1, "A", [0, 0]),  # unchanged
+                _feature(2, "B2", [1, 1]),  # attribute changed
+                _feature(4, "D", [3, 3]),  # added
+            ]
+        )
 
         before_path = tmp_path / "before.geojson"
         after_path = tmp_path / "after.geojson"
@@ -44,12 +48,10 @@ class TestEndToEndDiff:
         after_path.write_text(json.dumps(after))
 
         records_a = [
-            FeatureRecord.from_dict(f["id"], f["properties"], f["geometry"]["coordinates"])
-            for f in before["features"]
+            FeatureRecord.from_dict(f["id"], f["properties"], f["geometry"]["coordinates"]) for f in before["features"]
         ]
         records_b = [
-            FeatureRecord.from_dict(f["id"], f["properties"], f["geometry"]["coordinates"])
-            for f in after["features"]
+            FeatureRecord.from_dict(f["id"], f["properties"], f["geometry"]["coordinates"]) for f in after["features"]
         ]
 
         result = compute_diff(records_a, records_b, key="id")

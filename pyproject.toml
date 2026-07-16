@@ -70,10 +70,6 @@ ignore_missing_imports = true
 module = "qgis.*"
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = "PyQt5.*"
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 testpaths = ["test"]
 addopts = "--cov=core --cov-report=term-missing --cov-report=html --cov-report=lcov --cov-fail-under=70"

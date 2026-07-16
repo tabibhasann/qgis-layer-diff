@@ -142,6 +142,6 @@ def match_by_geometry(
 def _geoms_equal(g1, g2, tolerance: float) -> bool:
     """Check if two shapely geometries are equal within tolerance."""
     if tolerance == 0:
-        return g1.equals(g2)
+        return bool(g1.equals(g2))
     # Use Hausdorff distance for approximate equality
-    return g1.hausdorff_distance(g2) <= tolerance
+    return bool(g1.hausdorff_distance(g2) <= tolerance)

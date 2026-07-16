@@ -4,7 +4,6 @@ Tests invalid inputs, edge cases, empty data, corrupt WKT,
 duplicate keys, and error handling across all core modules.
 """
 
-
 from core.differ import compute_diff
 from core.matching import _geoms_equal, match_by_geometry, match_by_key
 from core.models import DiffResult, FeatureRecord, FieldChange, ModifiedFeature
@@ -276,7 +275,11 @@ class TestReportErrorPaths:
         result = DiffResult(
             added=[FeatureRecord(key="1", attrs={}, wkt="POINT (0 0)")],
             removed=[FeatureRecord(key="2", attrs={}, wkt="POINT (1 1)")],
-            modified=[ModifiedFeature(key="3", geometry_changed=True, field_changes=[FieldChange(field="name", old="A", new="B")])],
+            modified=[
+                ModifiedFeature(
+                    key="3", geometry_changed=True, field_changes=[FieldChange(field="name", old="A", new="B")]
+                )
+            ],
         )
         csv_str = to_csv(result)
         assert "added" in csv_str
@@ -287,7 +290,11 @@ class TestReportErrorPaths:
 
     def test_to_csv_none_values(self) -> None:
         result = DiffResult(
-            modified=[ModifiedFeature(key="1", geometry_changed=False, field_changes=[FieldChange(field="name", old=None, new="B")])],
+            modified=[
+                ModifiedFeature(
+                    key="1", geometry_changed=False, field_changes=[FieldChange(field="name", old=None, new="B")]
+                )
+            ],
         )
         csv_str = to_csv(result)
         assert "modified" in csv_str

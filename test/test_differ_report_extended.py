@@ -193,10 +193,15 @@ class TestReportExtended:
         assert "Removed Features" in html
 
     def test_to_html_with_modified(self):
-        r = DiffResult(modified=[ModifiedFeature(
-            key="1", geometry_changed=True,
-            field_changes=[FieldChange("name", "A", "B")],
-        )])
+        r = DiffResult(
+            modified=[
+                ModifiedFeature(
+                    key="1",
+                    geometry_changed=True,
+                    field_changes=[FieldChange("name", "A", "B")],
+                )
+            ]
+        )
         html = to_html(r)
         assert "Modified Features" in html
         assert "name" in html

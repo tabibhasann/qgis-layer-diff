@@ -19,9 +19,7 @@ def layer_to_records(
     transform = None
     if layer.crs() != other_layer.crs():
         needs_reproject = True
-        transform = QgsCoordinateTransform(
-            layer.crs(), other_layer.crs(), QgsProject.instance()
-        )
+        transform = QgsCoordinateTransform(layer.crs(), other_layer.crs(), QgsProject.instance())
 
     key_idx = layer.fields().indexOf(key_field) if key_field else -1
 

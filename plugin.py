@@ -39,7 +39,8 @@ class LayerDiffPlugin:
     def run(self):
         if not self.dock:
             from .diff_dock import DiffDock
-            self.dock = DiffDock(self.iface)
+
+            self.dock = DiffDock(self.iface)  # type: ignore[no-untyped-call]
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dock)
         self.dock.show()
         self.dock.raise_()

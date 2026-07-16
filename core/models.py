@@ -7,6 +7,7 @@ from typing import Any
 @dataclass
 class FeatureRecord:
     """A feature record with a key, attributes dict, and WKT geometry."""
+
     key: Any
     attrs: dict[str, Any]
     wkt: str  # WKT geometry string for comparison
@@ -19,6 +20,7 @@ class FeatureRecord:
 @dataclass
 class FieldChange:
     """A single field change between old and new."""
+
     field: str
     old: object
     new: object
@@ -27,6 +29,7 @@ class FieldChange:
 @dataclass
 class ModifiedFeature:
     """A feature present in both layers but with changes."""
+
     key: str
     geometry_changed: bool
     field_changes: list[FieldChange] = field(default_factory=list)
@@ -37,6 +40,7 @@ class ModifiedFeature:
 @dataclass
 class DiffResult:
     """Complete diff between two sets of feature records."""
+
     added: list[FeatureRecord] = field(default_factory=list)
     removed: list[FeatureRecord] = field(default_factory=list)
     modified: list[ModifiedFeature] = field(default_factory=list)

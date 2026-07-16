@@ -28,20 +28,28 @@ def get_last_tag() -> str | None:
 
 
 def get_merged_prs(since_tag: str | None) -> list[dict]:
-    cmd = ["gh", "pr", "list", "--state", "merged", "--limit", "100", "--json"]
+    cmd = [
+        "gh",
+        "pr",
+        "list",
+        "--state",
+        "merged",
+        "--limit",
+        "100",
+        "--json",
+        "number,title,author,mergedAt",
+    ]
     if since_tag:
         cmd += ["--search", f"merged:>={since_tag}"]
-    cmd += ["number", "title", "author", "mergedAt"]
-    raw = subprocess.run(cmd, capture_output=True, text=True)
     try:
-        data = json.loads(raw.stdout)
-    except (json.JSONDecodeError, TypeError):
+        data = json.loads(run(cmd))
+    except (json.JSONDecodeError, subprocess.CalledProcessError):
         return []
     return [
         {
             "number": str(item.get("number", "")),
             "title": item.get("title", ""),
-            "author": item.get("author", {}).get("login", ""),
+            "author": (item.get("author") or {}).get("login", ""),
         }
         for item in data
     ]

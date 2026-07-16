@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """compare_by_geometry.py — Compare two vector layers by geometry matching."""
+
 from qgis.core import QgsVectorLayer
 from qgis_layer_diff import compare_layers
 
