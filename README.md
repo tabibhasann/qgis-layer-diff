@@ -132,6 +132,14 @@ Results:
 Processing time: 8 seconds (R-tree indexed geometry matching)
 ```
 
+### Sample Data
+
+Two small GeoJSON files for testing are in `examples/sample_data/`:
+- `layer_a.geojson` — 3 features (Parks A, B, C)
+- `layer_b.geojson` — 3 features (Parks A modified, B unchanged, D added; C removed)
+
+Load both into QGIS to see the diff: 1 added, 1 removed, 1 modified.
+
 ## 📊 Performance
 
 ### Benchmarks

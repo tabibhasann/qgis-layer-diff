@@ -1,0 +1,8 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type": "Feature", "properties": {"id": 1, "name": "Park A", "area": 150}, "geometry": {"type": "Point", "coordinates": [0, 0]}},
+    {"type": "Feature", "properties": {"id": 2, "name": "Park B", "area": 200}, "geometry": {"type": "Point", "coordinates": [1, 1]}},
+    {"type": "Feature", "properties": {"id": 4, "name": "Park D", "area": 400}, "geometry": {"type": "Point", "coordinates": [3, 3]}}
+  ]
+}
