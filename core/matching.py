@@ -130,6 +130,7 @@ def match_by_geometry(
     if progress_callback:
         progress_callback(total, total, "Matching complete")
 
+    # Unmatched B includes both valid-but-unused and invalid/empty records
     unmatched_b = [records_b[j] for j in range(len(records_b)) if j not in used_b]
 
     return {

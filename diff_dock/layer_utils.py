@@ -43,6 +43,8 @@ def layer_to_records(
             geom.transform(transform)
 
         wkt = geom.asWkt() if geom and not geom.isEmpty() else ""
+        if wkt is None:
+            wkt = ""
 
         records.append(FeatureRecord(key=str(key), attrs=attrs, wkt=wkt))
 

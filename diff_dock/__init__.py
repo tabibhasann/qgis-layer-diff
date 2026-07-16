@@ -337,7 +337,7 @@ class DiffDock(QDockWidget):  # type: ignore[misc]
         if path:
             summary_only = self.summary_only_check.isChecked()
             html = to_html(self.result, summary_only=summary_only)
-            with open(path, "w") as f:
+            with open(path, "w", encoding="utf-8") as f:
                 f.write(html)
 
     def _export_csv(self) -> None:
@@ -346,7 +346,7 @@ class DiffDock(QDockWidget):  # type: ignore[misc]
         path, _ = QFileDialog.getSaveFileName(self, "Export CSV", "", "CSV (*.csv)")
         if path:
             csv_content = to_csv(self.result)
-            with open(path, "w") as f:
+            with open(path, "w", encoding="utf-8", newline="") as f:
                 f.write(csv_content)
 
     def closeEvent(self, event) -> None:
